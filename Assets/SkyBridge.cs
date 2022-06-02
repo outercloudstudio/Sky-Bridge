@@ -20,6 +20,9 @@ namespace SkyBridge {
             DISCONNECTED
         }
 
-        public ConnectionMode connectionMode = ConnectionMode.OFFLINE;
+        public static ConnectionMode connectionMode = ConnectionMode.OFFLINE;
+
+        public static int bufferSize = 4096;
+        public static int sendRate = 60;
     }
 }
