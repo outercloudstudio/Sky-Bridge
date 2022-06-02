@@ -8,9 +8,17 @@ namespace SkyBridge
     {
         public Connection connection;
 
+        public Packet packet;
+
         void Start()
         {
             connection = new Connection();
+            connection.onPacketRecieved += _packet =>
+            {
+                Debug.Log(_packet);
+                packet = _packet;
+            };
+
             connection.Connect("localhost", 25565);
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -28,7 +29,7 @@ namespace SkyBridge
 
         private byte[] sendBuffer = new byte[0];
 
-        public delegate void PacketRecieved();
+        public delegate void PacketRecieved(Packet packet);
         public PacketRecieved onPacketRecieved;
 
         public Connection(TcpClient _client, NetworkStream _networkStream)
@@ -87,7 +88,19 @@ namespace SkyBridge
 
                 int bytesRead = networkStream.Read(bytes, 0, bytes.Length);
 
-                onPacketRecieved();
+                for (int readPos = 0; readPos < bytesRead;)
+                {
+                    byte[] packetLengthBytes = bytes[readPos..(readPos + 4)];
+                    int packetLength = BitConverter.ToInt32(packetLengthBytes);
+
+                    byte[] packetBytes = bytes[readPos..(readPos + packetLength)];
+
+                    Packet packet = new Packet(packetBytes);
+
+                    onPacketRecieved(packet);
+
+                    readPos += packetLength;
+                }
             }
         }
 
