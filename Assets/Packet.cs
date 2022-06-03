@@ -11,12 +11,7 @@ namespace SkyBridge
     {
         public enum PacketType
         {
-            DEBUG_PACKET,
-            HOST_GAME,
-            READY,
-            JOIN_GAME,
-            ERROR,
-            SIGNAL_JOIN
+            DEBUG_PACKET
         }
 
         [Serializable]

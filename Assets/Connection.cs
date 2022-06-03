@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace SkyBridge
 {
-    [System.Serializable]
+    [Serializable]
     public class Connection
     {
         public enum ConnectionMode
@@ -29,9 +29,6 @@ namespace SkyBridge
         private TcpClient client;
         private NetworkStream networkStream;
 
-        public delegate void ConnectionModeUpdated(Connection connection, ConnectionMode connectionMode);
-        public ConnectionModeUpdated onConnectionModeUpdated;
-
         public delegate void PacketRecieved(Connection connection, Packet packet);
         public PacketRecieved onPacketRecieved;
 
@@ -40,10 +37,7 @@ namespace SkyBridge
 
         private List<Packet> sendQueue = new List<Packet>();
 
-        public Connection()
-        {
-            
-        }
+        private List<Packet> readQueue = new List<Packet>();
 
         public void Connect(string _IP, int _port)
         {
@@ -51,7 +45,6 @@ namespace SkyBridge
             port = _port;
 
             connectionMode = ConnectionMode.CONNECTING;
-            if(onConnectionModeUpdated != null) onConnectionModeUpdated(this, connectionMode);
 
             connectThread = new Thread(ConnectThreaded);
             connectThread.Start();
@@ -66,7 +59,6 @@ namespace SkyBridge
             networkStream = _networkStream;
 
             connectionMode = ConnectionMode.CONNECTED;
-            if (onConnectionModeUpdated != null) onConnectionModeUpdated(this, connectionMode);
 
             StartThreads();
         }
@@ -78,7 +70,6 @@ namespace SkyBridge
             networkStream = client.GetStream();
 
             connectionMode = ConnectionMode.CONNECTED;
-            if (onConnectionModeUpdated != null) onConnectionModeUpdated(this, connectionMode);
 
             StartThreads();
         }
@@ -92,11 +83,26 @@ namespace SkyBridge
             dataListenerThread.Start();
         }
 
-        public void QueuePacket(Packet packet)
+        public void SendPacket(Packet packet)
         {
             lock (sendQueue)
             {
+                Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port);
                 sendQueue.Add(packet);
+            }
+        }
+
+        public void Update()
+        {
+            lock (readQueue)
+            {
+                foreach (Packet packet in readQueue)
+                {
+                    Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
+                    if (onPacketRecieved != null) onPacketRecieved(this, packet);
+                }
+
+                readQueue = new List<Packet>();
             }
         }
 
@@ -106,9 +112,9 @@ namespace SkyBridge
             {
                 while (true)
                 {
-                    if (sendQueue.Count > 0)
+                    lock (sendQueue)
                     {
-                        lock (sendQueue)
+                        if (sendQueue.Count > 0)
                         {
                             byte[] sendBuffer = new byte[0];
 
@@ -122,7 +128,7 @@ namespace SkyBridge
 
                                 if (sendBuffer.Length + packetBytes.Length >= SkyBridge.bufferSize) break;
 
-                                Debug.Log("Sending Packet " + packet.packetType + " to " + IP + ":" + port);
+                                Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
 
                                 byte[] extendedBytes = new byte[sendBuffer.Length + packetBytes.Length];
 
@@ -143,7 +149,7 @@ namespace SkyBridge
                             {
                                 Packet packet = sendQueue[0];
 
-                                Debug.LogWarning("Dropping Packet Because It Is Too Large To Send! " + packet.packetType + " Length: " + packet.ToBytes().Length);
+                                Debug.Log("Send Thread: Dropping Packet Because It Is Too Large To Send! " + packet.packetType + " Length: " + packet.ToBytes().Length);
 
                                 sendQueue.RemoveAt(0);
                             }
@@ -152,12 +158,12 @@ namespace SkyBridge
                         }
                     }
 
-                    Thread.Sleep(Mathf.FloorToInt(1f / SkyBridge.sendRate * 1000f));
+                    Thread.Sleep((int)MathF.Floor(1f / SkyBridge.sendRate * 1000f));
                 }
             }
             catch
             {
-                Disconnect();
+                Disconnect("Send Error");
             }
         }
 
@@ -171,38 +177,42 @@ namespace SkyBridge
 
                     int bytesRead = networkStream.Read(bytes, 0, bytes.Length);
 
-                    for (int readPos = 0; readPos < bytesRead;)
+                    lock (readQueue)
                     {
-                        byte[] packetLengthBytes = bytes[readPos..(readPos + 4)];
-                        int packetLength = BitConverter.ToInt32(packetLengthBytes);
+                        for (int readPos = 0; readPos < bytesRead;)
+                        {
+                            byte[] packetLengthBytes = bytes[readPos..(readPos + 4)];
+                            int packetLength = BitConverter.ToInt32(packetLengthBytes);
 
-                        byte[] packetBytes = bytes[readPos..(readPos + packetLength)];
+                            byte[] packetBytes = bytes[readPos..(readPos + packetLength)];
 
-                        Packet packet = new Packet(packetBytes);
+                            Packet packet = new Packet(packetBytes);
 
-                        Debug.Log("Recieved Packet " + packet.packetType + " from " + IP + ":" + port);
-                        if (onPacketRecieved != null) onPacketRecieved(this, packet);
+                            Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
 
-                        readPos += packetLength;
+                            readQueue.Add(packet);
+
+                            readPos += packetLength;
+                        }
                     }
                 }
             }
             catch
             {
-                Disconnect();
+                Disconnect("Listen Error");
             }
         }
 
-        public void Disconnect()
+        public void Disconnect(string reason = "unkown")
         {
-            Debug.Log("Disconnected connection " + IP + ":" + port);
+            if (connectionMode == ConnectionMode.DISCONNECTED) return;
+
+            Debug.Log("Disconnected connection " + IP + ":" + port + " because " + reason);
 
             connectionMode = ConnectionMode.DISCONNECTED;
-            if (onConnectionModeUpdated != null) onConnectionModeUpdated(this, connectionMode);
 
-            if (connectThread != null && connectThread.IsAlive) connectThread.Abort();
-            if (dataListenerThread != null && dataListenerThread.IsAlive) dataListenerThread.Abort();
-            if (dataSenderThread != null && dataSenderThread.IsAlive) dataSenderThread.Abort();
+            if (dataListenerThread != null && dataListenerThread.IsAlive) dataListenerThread.Interrupt();
+            if (dataSenderThread != null && dataSenderThread.IsAlive) dataSenderThread.Interrupt();
 
             if (client != null && networkStream != null && client.Connected)
             {
