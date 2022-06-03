@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace SkyBridge
 {
@@ -36,6 +37,11 @@ namespace SkyBridge
         {
             state = State.HOSTING_ROOM;
             connection.QueuePacket(new Packet(Packet.PacketType.HOST_GAME).AddValue(roomName).AddValue(Guid.NewGuid().ToString()).AddValue(roomPassword));
+
+            SkyBridge.hostBridgeServerConnection = connection;
+            SkyBridge.maxPlayers = maxPlayers;
+
+            SceneManager.LoadScene("Game");
         }
 
         public void JoinGame(string roomID, string roomPassword)
