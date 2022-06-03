@@ -32,24 +32,22 @@ namespace SkyBridge
             connection.Connect("localhost", 25565);
         }
 
-        public void HostGame(string roomName)
+        public void HostGame(string roomName, string roomPassword, int maxPlayers)
         {
             state = State.HOSTING_ROOM;
-            connection.QueuePacket(new Packet(Packet.PacketType.HOST_GAME).AddValue(roomName).AddValue(Guid.NewGuid().ToString()));
+            connection.QueuePacket(new Packet(Packet.PacketType.HOST_GAME).AddValue(roomName).AddValue(Guid.NewGuid().ToString()).AddValue(roomPassword));
         }
 
-        public void JoinGame()
+        public void JoinGame(string roomID, string roomPassword)
         {
             state = State.JOINING_ROOM;
-            connection.QueuePacket(new Packet(Packet.PacketType.JOIN_GAME));
+            connection.QueuePacket(new Packet(Packet.PacketType.JOIN_GAME).AddValue(roomID).AddValue(roomPassword));
         }
 
         public void HandlePacket(Connection connection, Packet packet)
         {
-            if (packet.packetType == Packet.PacketType.SEND_ROOMS)
+            if (packet.packetType == Packet.PacketType.READY)
             {
-                Debug.Log((string)packet.values[0].unserializedValue);
-
                 state = State.WAITING_FOR_ACTION;
             }
         }

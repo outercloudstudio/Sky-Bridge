@@ -13,7 +13,7 @@ namespace SkyBridge
         {
             DEBUG_PACKET,
             HOST_GAME,
-            SEND_ROOMS,
+            READY,
             JOIN_GAME
         }
 
@@ -30,7 +30,7 @@ namespace SkyBridge
                 VECTOR2,
                 VECTOR3INT,
                 VECTOR2INT,
-                QUATERNION
+                QUATERNION,
             }
 
             public Type valueType;
