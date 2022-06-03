@@ -8,6 +8,8 @@ namespace SkyBridge
     [CustomEditor(typeof(LobbyManager))]
     public class LobbyManagerEditor : Editor
     {
+        string roomName = "Room Name";
+
         public override void OnInspectorGUI()
         {
             LobbyManager lobbyManager = (LobbyManager)target;
@@ -16,13 +18,15 @@ namespace SkyBridge
             {
                 GUILayout.Label("State: " + lobbyManager.state.ToString());
 
-                if (lobbyManager.state == LobbyManager.State.CONNECTED)
+                if (lobbyManager.state == LobbyManager.State.WAITING_FOR_ACTION)
                 {
                     GUILayout.BeginHorizontal();
 
+                    roomName = GUILayout.TextField(roomName);
+
                     if (GUILayout.Button("Host Game"))
                     {
-                        lobbyManager.HostGame();
+                        lobbyManager.HostGame(roomName);
                     }
 
                     if (GUILayout.Button("Join Game"))
@@ -31,7 +35,7 @@ namespace SkyBridge
                     }
                     GUILayout.EndHorizontal();
                 }
-                else
+                else if(lobbyManager.state == LobbyManager.State.OFFLINE || lobbyManager.state == LobbyManager.State.DISCONNECTED)
                 {
                     if (GUILayout.Button("Connect"))
                     {

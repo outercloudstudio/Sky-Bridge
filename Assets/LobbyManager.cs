@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,14 +9,14 @@ namespace SkyBridge
     {
         public Connection connection;
 
-        public Packet packet;
-
         public enum State
         {
             OFFLINE,
             CONNECTING,
             CONNECTED,
+            WAITING_FOR_ACTION,
             HOSTING_ROOM,
+            JOINING_ROOM,
             DISCONNECTED,
         }
 
@@ -31,20 +32,26 @@ namespace SkyBridge
             connection.Connect("localhost", 25565);
         }
 
-        public void HostGame()
+        public void HostGame(string roomName)
         {
-            connection.QueuePacket(new Packet(Packet.PacketType.HOST_GAME));
+            state = State.HOSTING_ROOM;
+            connection.QueuePacket(new Packet(Packet.PacketType.HOST_GAME).AddValue(roomName).AddValue(Guid.NewGuid().ToString()));
         }
 
         public void JoinGame()
         {
-            
+            state = State.JOINING_ROOM;
+            connection.QueuePacket(new Packet(Packet.PacketType.JOIN_GAME));
         }
 
-        public void HandlePacket(Connection connection, Packet _packet)
+        public void HandlePacket(Connection connection, Packet packet)
         {
-            Debug.Log(_packet.packetType);
-            packet = _packet;
+            if (packet.packetType == Packet.PacketType.SEND_ROOMS)
+            {
+                Debug.Log((string)packet.values[0].unserializedValue);
+
+                state = State.WAITING_FOR_ACTION;
+            }
         }
 
         public void ConnectionModeUpdated(Connection connection, Connection.ConnectionMode connectionMode)
