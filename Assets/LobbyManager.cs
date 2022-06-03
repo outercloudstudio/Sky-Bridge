@@ -21,7 +21,7 @@ namespace SkyBridge
 
         public void HandlePacket(Connection connection, Packet packet)
         {
-            
+            Debug.Log((string)packet.values[0].unserializedValue);
         }
 
         private void Update()
