@@ -55,13 +55,14 @@ namespace SkyBridge
             if (packet.packetType == Packet.PacketType.READY)
             {
                 state = State.WAITING_FOR_ACTION;
+            }else if (packet.packetType == Packet.PacketType.ERROR)
+            {
+                connection.Disconnect();
             }
         }
 
         public void ConnectionModeUpdated(Connection connection, Connection.ConnectionMode connectionMode)
         {
-            Debug.Log("Connection Mode Updated: " + connectionMode);
-
             if(connectionMode == Connection.ConnectionMode.CONNECTING)
             {
                 state = State.CONNECTING;

@@ -102,84 +102,101 @@ namespace SkyBridge
 
         public void SendLoop()
         {
-            while (true)
+            try
             {
-                if (sendQueue.Count > 0)
+                while (true)
                 {
-                    lock (sendQueue)
+                    if (sendQueue.Count > 0)
                     {
-                        byte[] sendBuffer = new byte[0];
-
-                        int packetsPacked = 0;
-
-                        while (true)
+                        lock (sendQueue)
                         {
-                            Packet packet = sendQueue[0];
+                            byte[] sendBuffer = new byte[0];
 
-                            byte[] packetBytes = packet.ToBytes();
+                            int packetsPacked = 0;
 
-                            if (sendBuffer.Length + packetBytes.Length >= SkyBridge.bufferSize) break;
+                            while (true)
+                            {
+                                Packet packet = sendQueue[0];
 
-                            Debug.Log("Sending Packet " + packet.packetType.ToString());
+                                byte[] packetBytes = packet.ToBytes();
 
-                            byte[] extendedBytes = new byte[sendBuffer.Length + packetBytes.Length];
+                                if (sendBuffer.Length + packetBytes.Length >= SkyBridge.bufferSize) break;
 
-                            Buffer.BlockCopy(sendBuffer, 0, extendedBytes, 0, sendBuffer.Length);
+                                Debug.Log("Sending Packet " + packet.packetType + " to " + IP + ":" + port);
 
-                            Buffer.BlockCopy(packetBytes, 0, extendedBytes, sendBuffer.Length, packetBytes.Length);
+                                byte[] extendedBytes = new byte[sendBuffer.Length + packetBytes.Length];
 
-                            sendBuffer = extendedBytes;
+                                Buffer.BlockCopy(sendBuffer, 0, extendedBytes, 0, sendBuffer.Length);
 
-                            packetsPacked++;
+                                Buffer.BlockCopy(packetBytes, 0, extendedBytes, sendBuffer.Length, packetBytes.Length);
 
-                            sendQueue.RemoveAt(0);
+                                sendBuffer = extendedBytes;
 
-                            if (sendQueue.Count == 0) break;
+                                packetsPacked++;
+
+                                sendQueue.RemoveAt(0);
+
+                                if (sendQueue.Count == 0) break;
+                            }
+
+                            if (packetsPacked == 0)
+                            {
+                                Packet packet = sendQueue[0];
+
+                                Debug.LogWarning("Dropping Packet Because It Is Too Large To Send! " + packet.packetType + " Length: " + packet.ToBytes().Length);
+
+                                sendQueue.RemoveAt(0);
+                            }
+
+                            networkStream.Write(sendBuffer, 0, sendBuffer.Length);
                         }
-
-                        if (packetsPacked == 0)
-                        {
-                            Packet packet = sendQueue[0];
-
-                            Debug.LogWarning("Dropping Packet Because It Is Too Large To Send! " + packet.packetType + " Length: " + packet.ToBytes().Length);
-
-                            sendQueue.RemoveAt(0);
-                        }
-
-                        networkStream.Write(sendBuffer, 0, sendBuffer.Length);
                     }
-                }
 
-                Thread.Sleep(Mathf.FloorToInt(1f / SkyBridge.sendRate * 1000f));
+                    Thread.Sleep(Mathf.FloorToInt(1f / SkyBridge.sendRate * 1000f));
+                }
+            }
+            catch
+            {
+                Disconnect();
             }
         }
 
         public void ListenLoop()
         {
-            while (true)
+            try
             {
-                byte[] bytes = new byte[4096];
-
-                int bytesRead = networkStream.Read(bytes, 0, bytes.Length);
-
-                for (int readPos = 0; readPos < bytesRead;)
+                while (true)
                 {
-                    byte[] packetLengthBytes = bytes[readPos..(readPos + 4)];
-                    int packetLength = BitConverter.ToInt32(packetLengthBytes);
+                    byte[] bytes = new byte[4096];
 
-                    byte[] packetBytes = bytes[readPos..(readPos + packetLength)];
+                    int bytesRead = networkStream.Read(bytes, 0, bytes.Length);
 
-                    Packet packet = new Packet(packetBytes);
+                    for (int readPos = 0; readPos < bytesRead;)
+                    {
+                        byte[] packetLengthBytes = bytes[readPos..(readPos + 4)];
+                        int packetLength = BitConverter.ToInt32(packetLengthBytes);
 
-                    if(onPacketRecieved != null) onPacketRecieved(this, packet);
+                        byte[] packetBytes = bytes[readPos..(readPos + packetLength)];
 
-                    readPos += packetLength;
+                        Packet packet = new Packet(packetBytes);
+
+                        Debug.Log("Recieved Packet " + packet.packetType + " from " + IP + ":" + port);
+                        if (onPacketRecieved != null) onPacketRecieved(this, packet);
+
+                        readPos += packetLength;
+                    }
                 }
+            }
+            catch
+            {
+                Disconnect();
             }
         }
 
-        public void Abort()
+        public void Disconnect()
         {
+            Debug.Log("Disconnected connection " + IP + ":" + port);
+
             connectionMode = ConnectionMode.DISCONNECTED;
             if (onConnectionModeUpdated != null) onConnectionModeUpdated(this, connectionMode);
 
