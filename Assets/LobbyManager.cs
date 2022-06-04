@@ -19,19 +19,38 @@ namespace SkyBridge
             connection.Connect("localhost", 25565);
         }
 
+        public void Host()
+        {
+            connection.SendPacket(new Packet("HOST"));
+        }
+
+        public void Join()
+        {
+            connection.SendPacket(new Packet("JOIN"));
+        }
+
         public void HandlePacket(Connection connection, Packet packet)
         {
-            Debug.Log((string)packet.values[0].unserializedValue);
+            if(packet.packetType == "HOST_INFO")
+            {
+                string ID = packet.GetString(0);
+
+                SkyBridge.isHost = true;
+
+                SkyBridge.currentRoom = new SkyBridge.Room()
+                {
+                    ID = ID
+                };
+
+                SkyBridge.bridgeServerConncection = connection;
+
+                SceneManager.LoadScene("Game");
+            }
         }
 
         private void Update()
         {
             connection.Update();
-        }
-
-        private void OnDestroy()
-        {
-            if (connection != null) connection.Disconnect();
         }
     }
 }

@@ -16,11 +16,29 @@ namespace SkyBridge
             {
                 GUILayout.Label("State: " + lobbyManager.connection.connectionMode);
 
-                if (lobbyManager.connection != null && lobbyManager.connection.connectionMode == Connection.ConnectionMode.OFFLINE)
+                if (lobbyManager.connection != null)
                 {
-                    if (GUILayout.Button("Connect"))
+                    if (lobbyManager.connection.connectionMode == Connection.ConnectionMode.OFFLINE)
                     {
-                        lobbyManager.ConnectToBridgeServer();
+                        if (GUILayout.Button("Connect"))
+                        {
+                            lobbyManager.ConnectToBridgeServer();
+                        }
+                    }else if (lobbyManager.connection.connectionMode == Connection.ConnectionMode.CONNECTED)
+                    {
+                        GUILayout.BeginHorizontal();
+
+                        if (GUILayout.Button("Host"))
+                        {
+                            lobbyManager.Host();
+                        }
+
+                        if (GUILayout.Button("Join"))
+                        {
+                            lobbyManager.Join();
+                        }
+
+                        GUILayout.EndHorizontal();
                     }
                 }
             }
