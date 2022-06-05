@@ -14,9 +14,17 @@ namespace SkyBridge
 
             if (EditorApplication.isPlaying)
             {
-                GUILayout.Label("State: " + SkyBridge.bridgeServerConncection.connectionMode);
+                if(SkyBridge.bridgeServerConncection != null) GUILayout.Label("State: " + SkyBridge.bridgeServerConncection.connectionMode);
                 GUILayout.Label("Room ID: " + SkyBridge.currentRoom.ID);
                 GUILayout.Label("Is Host: " + SkyBridge.isHost);
+
+                if (GUILayout.Button("Send"))
+                {
+                    foreach (Connection connection in SkyBridge.connections)
+                    {
+                        if (connection != null) connection.SendPacket(new Packet("DEBUG"));
+                    }
+                }
             }
             else
             {

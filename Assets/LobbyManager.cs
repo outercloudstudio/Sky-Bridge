@@ -53,15 +53,25 @@ namespace SkyBridge
             }
             else if (packet.packetType == "JOIN_ATTEMPT_ACCEPTED")
             {
+                connection.Disconnect("Uneeded Sky Bridge Server Connection");
+
                 string IP = packet.GetString(0);
                 int port = packet.GetInt(1);
 
-                SkyBridge.hostConncection = new Connection();
-                SkyBridge.hostConncection.onPacketRecieved = HandlePacket;
+                SkyBridge.connections = new Connection[SkyBridge.maxPlayers];
 
-                Debug.Log("Connecting to " + IP + ":" + port);
+                Connection hostConnection = new Connection();
+                hostConnection.onPacketRecieved = HandlePacket;
 
-                SkyBridge.hostConncection.Connect(IP, port);
+                SkyBridge.connections[0] = hostConnection;
+
+                hostConnection.Connect(IP, port);
+
+                SkyBridge.currentRoom = new SkyBridge.Room() {
+                    ID = "Unkown"
+                };
+
+                SceneManager.LoadScene("Game");
             }
         }
 

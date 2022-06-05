@@ -33,7 +33,7 @@ namespace SkyBridge {
 
         private void Start()
         {
-            connections = new Connection[maxPlayers];
+            if(isHost) connections = new Connection[maxPlayers];
             listenThreads = new Thread[maxPlayers];
 
             if (isHost)
@@ -44,7 +44,7 @@ namespace SkyBridge {
 
         private void Update()
         {
-            bridgeServerConncection.Update(Time.deltaTime);
+            if (bridgeServerConncection != null) bridgeServerConncection.Update(Time.deltaTime);
 
             foreach (Connection connection in connections)
             {
@@ -66,11 +66,7 @@ namespace SkyBridge {
         {
             listener.Start();
 
-            Debug.Log("Started Listener!");
-
             TcpClient client = listener.AcceptTcpClient();
-
-            Debug.Log("Accpeted client!");
 
             NetworkStream networkStream = client.GetStream();
 
@@ -121,8 +117,6 @@ namespace SkyBridge {
 
                 listenThreads[openIndex] = new Thread(() => { ListenForConnection(openIndex, listener); });
                 listenThreads[openIndex].Start();
-
-                Debug.Log("Opened connection at " + port + " for " + IP);
 
                 connection.SendPacket(new Packet("JOIN_ATTEMPT_ACCEPTED").AddValue(ID).AddValue(port));
             }
