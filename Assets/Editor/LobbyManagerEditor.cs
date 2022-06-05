@@ -43,6 +43,11 @@ namespace SkyBridge
                         }
 
                         GUILayout.EndHorizontal();
+
+                        if (GUILayout.Button("Disconnect"))
+                        {
+                            lobbyManager.connection.Disconnect();
+                        }
                     }
                 }
             }

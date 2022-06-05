@@ -69,7 +69,14 @@ namespace SkyBridge {
                     return;
                 }
 
-                connection.SendPacket(new Packet("JOIN_ATTEMPT_REJECTED").AddValue(ID).AddValue("Game Full"));
+                //TODO: Allocate connection space for connection, Allocate listen thread for connection from IP
+
+                connection.SendPacket(new Packet("JOIN_ATTEMPT_ACCEPTED").AddValue(ID));
+            } else if (packet.packetType == "JOIN_ATTEMPT_ACCEPTED")
+            {
+                string IP = packet.GetString(0);
+
+                //TODO: Connect to host
             }
         }
     }
