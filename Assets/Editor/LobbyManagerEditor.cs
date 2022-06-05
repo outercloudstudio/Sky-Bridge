@@ -8,6 +8,8 @@ namespace SkyBridge
     [CustomEditor(typeof(LobbyManager))]
     public class LobbyManagerEditor : Editor
     {
+        string roomID = "Room ID";
+
         public override void OnInspectorGUI()
         {
             LobbyManager lobbyManager = (LobbyManager)target;
@@ -26,6 +28,8 @@ namespace SkyBridge
                         }
                     }else if (lobbyManager.connection.connectionMode == Connection.ConnectionMode.CONNECTED)
                     {
+                        roomID = GUILayout.TextField(roomID);
+
                         GUILayout.BeginHorizontal();
 
                         if (GUILayout.Button("Host"))
@@ -35,7 +39,7 @@ namespace SkyBridge
 
                         if (GUILayout.Button("Join"))
                         {
-                            lobbyManager.Join();
+                            lobbyManager.Join(roomID);
                         }
 
                         GUILayout.EndHorizontal();

@@ -24,14 +24,14 @@ namespace SkyBridge
             connection.SendPacket(new Packet("HOST"));
         }
 
-        public void Join()
+        public void Join(string ID)
         {
-            connection.SendPacket(new Packet("JOIN"));
+            connection.SendPacket(new Packet("JOIN").AddValue(ID));
         }
 
         public void HandlePacket(Connection connection, Packet packet)
         {
-            if(packet.packetType == "HOST_INFO")
+            if (packet.packetType == "HOST_INFO")
             {
                 string ID = packet.GetString(0);
 
@@ -45,6 +45,9 @@ namespace SkyBridge
                 SkyBridge.bridgeServerConncection = connection;
 
                 SceneManager.LoadScene("Game");
+            }else if (packet.packetType == "JOIN_ATTEMPT_REJECTED")
+            {
+                Debug.LogWarning("Failed to join room!");
             }
         }
 
