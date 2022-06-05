@@ -47,13 +47,15 @@ namespace SkyBridge
                 SceneManager.LoadScene("Game");
             }else if (packet.packetType == "JOIN_ATTEMPT_REJECTED")
             {
-                Debug.LogWarning("Failed to join room!");
+                string reason = packet.GetString(0);
+
+                Debug.LogWarning("Failed to join room! " + reason);
             }
         }
 
         private void Update()
         {
-            connection.Update();
+            connection.Update(Time.deltaTime);
         }
     }
 }

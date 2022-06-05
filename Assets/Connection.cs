@@ -35,6 +35,9 @@ namespace SkyBridge
         public string IP;
         public int port;
 
+        private float timeout = SkyBridge.timeout;
+        private float keepalive = SkyBridge.keepalive;
+
         private List<Packet> sendQueue = new List<Packet>();
 
         private List<Packet> readQueue = new List<Packet>();
@@ -92,8 +95,11 @@ namespace SkyBridge
             }
         }
 
-        public void Update()
+        public void Update(float delta)
         {
+            timeout -= delta;
+            keepalive -= delta;
+
             lock (readQueue)
             {
                 foreach (Packet packet in readQueue)
@@ -104,6 +110,8 @@ namespace SkyBridge
 
                 readQueue = new List<Packet>();
             }
+
+            if (timeout <= 0) Disconnect("Connection timed out");
         }
 
         public void SendLoop()
@@ -114,14 +122,34 @@ namespace SkyBridge
                 {
                     lock (sendQueue)
                     {
-                        if (sendQueue.Count > 0)
+                        if (sendQueue.Count > 0 || keepalive <= 0)
                         {
                             byte[] sendBuffer = new byte[0];
 
                             int packetsPacked = 0;
 
+                            if (keepalive <= 0)
+                            {
+                                keepalive = SkyBridge.keepalive;
+
+                                Packet packet = new Packet("KEEP_ALIVE");
+
+                                byte[] packetBytes = packet.ToBytes();
+
+                                if (sendBuffer.Length + packetBytes.Length < SkyBridge.bufferSize)
+                                {
+                                    Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
+
+                                    sendBuffer = packetBytes;
+
+                                    packetsPacked++;
+                                }
+                            }
+
                             while (true)
                             {
+                                if (sendQueue.Count == 0) break;
+
                                 Packet packet = sendQueue[0];
 
                                 byte[] packetBytes = packet.ToBytes();
@@ -141,8 +169,6 @@ namespace SkyBridge
                                 packetsPacked++;
 
                                 sendQueue.RemoveAt(0);
-
-                                if (sendQueue.Count == 0) break;
                             }
 
                             if (packetsPacked == 0)
@@ -190,7 +216,14 @@ namespace SkyBridge
 
                             Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
 
-                            readQueue.Add(packet);
+                            if (packet.packetType == "KEEP_ALIVE")
+                            {
+                                timeout = SkyBridge.timeout;
+                            }
+                            else
+                            {
+                                readQueue.Add(packet);
+                            }
 
                             readPos += packetLength;
                         }

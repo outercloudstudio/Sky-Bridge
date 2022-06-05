@@ -12,6 +12,8 @@ namespace SkyBridge {
 
         public static int bufferSize = 4096;
         public static int sendRate = 60;
+        public static float timeout = 30;
+        public static float keepalive = 5;
 
         public static bool isHost = false;
 
@@ -35,11 +37,11 @@ namespace SkyBridge {
 
         private void Update()
         {
-            bridgeServerConncection.Update();
+            bridgeServerConncection.Update(Time.deltaTime);
 
             foreach (Connection connection in connections)
             {
-                if (connection != null) connection.Update();
+                if (connection != null) connection.Update(Time.deltaTime);
             }
         }
 
