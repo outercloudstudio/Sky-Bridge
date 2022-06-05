@@ -51,6 +51,18 @@ namespace SkyBridge
 
                 Debug.LogWarning("Failed to join room! " + reason);
             }
+            else if (packet.packetType == "JOIN_ATTEMPT_ACCEPTED")
+            {
+                string IP = packet.GetString(0);
+                int port = packet.GetInt(1);
+
+                SkyBridge.hostConncection = new Connection();
+                SkyBridge.hostConncection.onPacketRecieved = HandlePacket;
+
+                Debug.Log("Connecting to " + IP + ":" + port);
+
+                SkyBridge.hostConncection.Connect(IP, port);
+            }
         }
 
         private void Update()

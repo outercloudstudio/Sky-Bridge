@@ -1,5 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 using UnityEngine;
 
 namespace SkyBridge {
@@ -20,14 +23,18 @@ namespace SkyBridge {
         public static Room currentRoom;
 
         public static Connection bridgeServerConncection;
+        public static Connection hostConncection;
 
         public static int maxPlayers = 8;
 
         public static Connection[] connections;
 
+        public static Thread[] listenThreads;
+
         private void Start()
         {
             connections = new Connection[maxPlayers];
+            listenThreads = new Thread[maxPlayers];
 
             if (isHost)
             {
@@ -55,6 +62,39 @@ namespace SkyBridge {
             return -1;
         }
 
+        public void ListenForConnection(int index, TcpListener listener)
+        {
+            listener.Start();
+
+            Debug.Log("Started Listener!");
+
+            TcpClient client = listener.AcceptTcpClient();
+
+            Debug.Log("Accpeted client!");
+
+            NetworkStream networkStream = client.GetStream();
+
+            connections[index].Assign(client, networkStream);
+        }
+
+        public void HandlePacket(Connection connection, Packet packet)
+        {
+            
+        }
+
+        public static int GetOpenTcpPort()
+        {
+            TcpListener l = new TcpListener(IPAddress.Loopback, 0);
+
+            l.Start();
+
+            int port = ((IPEndPoint)l.LocalEndpoint).Port;
+
+            l.Stop();
+
+            return port;
+        }
+
         public void HandleBridgeServerPacket(Connection connection, Packet packet)
         {
             if (packet.packetType == "JOIN_ATTEMPT")
@@ -62,21 +102,29 @@ namespace SkyBridge {
                 string ID = packet.GetString(0);
                 string IP = packet.GetString(1);
 
-                if(GetOpenConnectionIndex() == -1)
+                int openIndex = GetOpenConnectionIndex();
+
+                if (openIndex == -1)
                 {
                     connection.SendPacket(new Packet("JOIN_ATTEMPT_REJECTED").AddValue(ID).AddValue("Game Full"));
 
                     return;
                 }
 
-                //TODO: Allocate connection space for connection, Allocate listen thread for connection from IP
+                int port = GetOpenTcpPort();
 
-                connection.SendPacket(new Packet("JOIN_ATTEMPT_ACCEPTED").AddValue(ID));
-            } else if (packet.packetType == "JOIN_ATTEMPT_ACCEPTED")
-            {
-                string IP = packet.GetString(0);
+                TcpListener listener = new TcpListener(IPAddress.Parse(IP), port);
 
-                //TODO: Connect to host
+                connections[openIndex] = new Connection();
+
+                connections[openIndex].onPacketRecieved = HandlePacket;
+
+                listenThreads[openIndex] = new Thread(() => { ListenForConnection(openIndex, listener); });
+                listenThreads[openIndex].Start();
+
+                Debug.Log("Opened connection at " + port + " for " + IP);
+
+                connection.SendPacket(new Packet("JOIN_ATTEMPT_ACCEPTED").AddValue(ID).AddValue(port));
             }
         }
     }

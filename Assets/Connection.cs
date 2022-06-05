@@ -138,7 +138,7 @@ namespace SkyBridge
 
                                 if (sendBuffer.Length + packetBytes.Length < SkyBridge.bufferSize)
                                 {
-                                    Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
+                                    //Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
 
                                     sendBuffer = packetBytes;
 
@@ -214,14 +214,14 @@ namespace SkyBridge
 
                             Packet packet = new Packet(packetBytes);
 
-                            Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
-
                             if (packet.packetType == "KEEP_ALIVE")
                             {
                                 timeout = SkyBridge.timeout;
                             }
                             else
                             {
+                                Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
+
                                 readQueue.Add(packet);
                             }
 
