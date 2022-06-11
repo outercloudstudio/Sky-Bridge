@@ -36,14 +36,31 @@ namespace SkyBridge {
         public static Client client;
         public static Connection connection;
 
+        private void Start()
+        {
+            connection.onPacketRecieved = HandlePacket;
+        }
+
         private void Update()
         {
             connection.Update(Time.deltaTime);
         }
 
+        public static void SendSmartPacket(Packet packet, string target)
+        {
+            packet.values.Insert(0, new Packet.SerializedValue(target));
+            packet.values.Insert(0, new Packet.SerializedValue(packet.packetType));
+            packet.packetType = "RELAY";
+
+            connection.SendPacket(packet);
+        }
+
         public void HandlePacket(Connection connection, Packet packet)
         {
-            
+            if(packet.packetType == "DEBUG")
+            {
+                Debug.Log(packet.GetString(0));
+            }
         }
     }
 }
