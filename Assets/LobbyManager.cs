@@ -26,6 +26,11 @@ namespace SkyBridge
 
         public void Join(string ID)
         {
+            SkyBridge.currentRoom = new SkyBridge.Room()
+            {
+                ID = ID
+            };
+
             connection.SendPacket(new Packet("JOIN").AddValue(ID));
         }
 
@@ -34,6 +39,7 @@ namespace SkyBridge
             if (packet.packetType == "HOST_INFO")
             {
                 string ID = packet.GetString(0);
+                string clientID = packet.GetString(1);
 
                 SkyBridge.isHost = true;
 
@@ -42,6 +48,7 @@ namespace SkyBridge
                     ID = ID
                 };
 
+                SkyBridge.client = new SkyBridge.Client(clientID);
                 SkyBridge.connection = connection;
 
                 SceneManager.LoadScene("Game");
@@ -53,11 +60,14 @@ namespace SkyBridge
             }
             else if (packet.packetType == "JOIN_ACCEPTED")
             {
+                string clientID = packet.GetString(0);
+
                 SkyBridge.currentRoom = new SkyBridge.Room()
                 {
                     ID = "Unkown"
                 };
 
+                SkyBridge.client = new SkyBridge.Client(clientID);
                 SkyBridge.connection = connection;
 
                 SceneManager.LoadScene("Game");

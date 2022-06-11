@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -8,6 +9,16 @@ using UnityEngine;
 namespace SkyBridge {
     public class SkyBridge : MonoBehaviour
     {
+        public class Client
+        {
+            public string ID;
+
+            public Client(string _ID)
+            {
+                ID = _ID;
+            }
+        }
+
         public class Room
         {
             public string ID;
@@ -22,6 +33,7 @@ namespace SkyBridge {
 
         public static Room currentRoom;
 
+        public static Client client;
         public static Connection connection;
 
         private void Update()

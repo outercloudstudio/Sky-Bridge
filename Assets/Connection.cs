@@ -68,13 +68,20 @@ namespace SkyBridge
 
         public void ConnectThreaded()
         {
-            client = new TcpClient(IP, port);
+            try
+            {
+                client = new TcpClient(IP, port);
 
-            networkStream = client.GetStream();
+                networkStream = client.GetStream();
 
-            connectionMode = ConnectionMode.CONNECTED;
+                connectionMode = ConnectionMode.CONNECTED;
 
-            StartThreads();
+                StartThreads();
+            }
+            catch
+            {
+                Disconnect("Failed to connect!");
+            }
         }
 
         public void StartThreads()

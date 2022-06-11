@@ -21,7 +21,7 @@ namespace SkyBridge
 
                 if (lobbyManager.connection != null)
                 {
-                    if (lobbyManager.connection.connectionMode == Connection.ConnectionMode.OFFLINE)
+                    if (lobbyManager.connection.connectionMode == Connection.ConnectionMode.OFFLINE || lobbyManager.connection.connectionMode == Connection.ConnectionMode.DISCONNECTED)
                     {
                         if (GUILayout.Button("Connect"))
                         {
