@@ -19,9 +19,9 @@ namespace SkyBridge
             connection.Connect("localhost", 25565);
         }
 
-        public void Host()
+        public void Host(int maxPlayers)
         {
-            connection.SendPacket(new Packet("HOST"));
+            connection.SendPacket(new Packet("HOST").AddValue(maxPlayers));
         }
 
         public void Join(string ID)

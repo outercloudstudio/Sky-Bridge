@@ -9,6 +9,7 @@ namespace SkyBridge
     public class LobbyManagerEditor : Editor
     {
         string roomID = "Room ID";
+        int maxPlayers = 1;
 
         public override void OnInspectorGUI()
         {
@@ -32,9 +33,28 @@ namespace SkyBridge
 
                         GUILayout.BeginHorizontal();
 
+                        GUILayout.Label("Max players: ");
+
+                        string unparsedMaxPlayers = GUILayout.TextField(maxPlayers.ToString());
+
+                        try
+                        {
+                            maxPlayers = int.Parse(unparsedMaxPlayers);
+                        }
+                        catch
+                        {
+
+                        }
+
+                        maxPlayers = Mathf.Clamp(maxPlayers, 1, 8);
+
+                        GUILayout.EndHorizontal();
+
+                        GUILayout.BeginHorizontal();
+
                         if (GUILayout.Button("Host"))
                         {
-                            lobbyManager.Host();
+                            lobbyManager.Host(maxPlayers);
                         }
 
                         if (GUILayout.Button("Join"))
