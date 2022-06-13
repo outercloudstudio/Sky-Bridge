@@ -97,7 +97,7 @@ namespace SkyBridge
         {
             lock (sendQueue)
             {
-                Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port);
+                //Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port);
                 sendQueue.Add(packet);
             }
         }
@@ -111,7 +111,7 @@ namespace SkyBridge
             {
                 foreach (Packet packet in readQueue)
                 {
-                    Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
+                    //Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
                     if (onPacketRecieved != null) onPacketRecieved(this, packet);
                 }
 
@@ -182,7 +182,7 @@ namespace SkyBridge
                             {
                                 Packet packet = sendQueue[0];
 
-                                Debug.Log("Send Thread: Dropping Packet Because It Is Too Large To Send! " + packet.packetType + " Length: " + packet.ToBytes().Length);
+                                //Debug.Log("Send Thread: Dropping Packet Because It Is Too Large To Send! " + packet.packetType + " Length: " + packet.ToBytes().Length);
 
                                 sendQueue.RemoveAt(0);
                             }
@@ -227,7 +227,12 @@ namespace SkyBridge
                             }
                             else
                             {
-                                Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
+                                //Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
+
+                                if(packet.packetType == "RELAY")
+                                {
+                                    Debug.Log(packet.GetVector3(4));
+                                }
 
                                 readQueue.Add(packet);
                             }

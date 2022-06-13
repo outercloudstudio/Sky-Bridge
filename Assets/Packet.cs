@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using UnityEngine;
 
 namespace SkyBridge
 {
@@ -66,6 +67,80 @@ namespace SkyBridge
                 unserializedValue = value;
             }
 
+            public SerializedValue(Vector3 value)
+            {
+                valueType = Type.VECTOR3;
+
+                byte[] bytes = new byte[12];
+
+                Buffer.BlockCopy(BitConverter.GetBytes(value.x), 0, bytes, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.y), 0, bytes, 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.z), 0, bytes, 4 + 4, 4);
+
+                serializedValue = bytes;
+
+                unserializedValue = value;
+            }
+
+            public SerializedValue(Vector2 value)
+            {
+                valueType = Type.VECTOR2;
+
+                byte[] bytes = new byte[8];
+
+                Buffer.BlockCopy(BitConverter.GetBytes(value.x), 0, bytes, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.y), 0, bytes, 4, 4);
+
+                serializedValue = bytes;
+
+                unserializedValue = value;
+            }
+
+            public SerializedValue(Vector3Int value)
+            {
+                valueType = Type.VECTOR3INT;
+
+                byte[] bytes = new byte[12];
+
+                Buffer.BlockCopy(BitConverter.GetBytes(value.x), 0, bytes, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.y), 0, bytes, 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.z), 0, bytes, 4 + 4, 4);
+
+                serializedValue = bytes;
+
+                unserializedValue = value;
+            }
+
+            public SerializedValue(Vector2Int value)
+            {
+                valueType = Type.VECTOR2INT;
+
+                byte[] bytes = new byte[8];
+
+                Buffer.BlockCopy(BitConverter.GetBytes(value.x), 0, bytes, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.y), 0, bytes, 4, 4);
+
+                serializedValue = bytes;
+
+                unserializedValue = value;
+            }
+
+            public SerializedValue(Quaternion value)
+            {
+                valueType = Type.QUATERNION;
+
+                byte[] bytes = new byte[16];
+
+                Buffer.BlockCopy(BitConverter.GetBytes(value.x), 0, bytes, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.y), 0, bytes, 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.z), 0, bytes, 4 + 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(value.w), 0, bytes, 4 + 4 + 4, 4);
+
+                serializedValue = bytes;
+
+                unserializedValue = value;
+            }
+
             public byte[] GetBytes()
             {
                 byte[] bytes = new byte[4 + 4 + serializedValue.Length];
@@ -95,6 +170,16 @@ namespace SkyBridge
                         return new SerializedValue(BitConverter.ToBoolean(bytes[8..9]));
                     case Type.STRING:
                         return new SerializedValue(Encoding.ASCII.GetString(bytes[8..bytes.Length]));
+                    case Type.VECTOR3:
+                        return new SerializedValue(new Vector3(BitConverter.ToSingle(bytes[8..12]), BitConverter.ToSingle(bytes[12..16]), BitConverter.ToSingle(bytes[16..20])));
+                    case Type.VECTOR2:
+                        return new SerializedValue(new Vector2(BitConverter.ToSingle(bytes[8..12]), BitConverter.ToSingle(bytes[12..16])));
+                    case Type.VECTOR3INT:
+                        return new SerializedValue(new Vector3(BitConverter.ToInt32(bytes[8..12]), BitConverter.ToInt32(bytes[12..16]), BitConverter.ToInt32(bytes[16..20])));
+                    case Type.VECTOR2INT:
+                        return new SerializedValue(new Vector3(BitConverter.ToInt32(bytes[8..12]), BitConverter.ToInt32(bytes[12..16])));
+                    case Type.QUATERNION:
+                        return new SerializedValue(new Quaternion(BitConverter.ToSingle(bytes[8..12]), BitConverter.ToSingle(bytes[12..16]), BitConverter.ToSingle(bytes[16..20]), BitConverter.ToSingle(bytes[20..24])));
                 }
 
                 return null;
@@ -165,6 +250,41 @@ namespace SkyBridge
             return this;
         }
 
+        public Packet AddValue(Vector3 value)
+        {
+            values.Add(new SerializedValue(value));
+
+            return this;
+        }
+
+        public Packet AddValue(Vector2 value)
+        {
+            values.Add(new SerializedValue(value));
+
+            return this;
+        }
+
+        public Packet AddValue(Vector3Int value)
+        {
+            values.Add(new SerializedValue(value));
+
+            return this;
+        }
+
+        public Packet AddValue(Vector2Int value)
+        {
+            values.Add(new SerializedValue(value));
+
+            return this;
+        }
+
+        public Packet AddValue(Quaternion value)
+        {
+            values.Add(new SerializedValue(value));
+
+            return this;
+        }
+
         public byte[] ToBytes()
         {
             int packetLength = 4 + 4;
@@ -218,6 +338,31 @@ namespace SkyBridge
         public string GetString(int index)
         {
             return (string)values[index].unserializedValue;
+        }
+
+        public Vector3 GetVector3(int index)
+        {
+            return (Vector3)values[index].unserializedValue;
+        }
+
+        public Vector3Int GetVector3Int(int index)
+        {
+            return (Vector3Int)values[index].unserializedValue;
+        }
+
+        public Vector2 GetVector2(int index)
+        {
+            return (Vector2)values[index].unserializedValue;
+        }
+
+        public Vector2Int GetVector2Int(int index)
+        {
+            return (Vector2Int)values[index].unserializedValue;
+        }
+
+        public Quaternion GetQuaternion(int index)
+        {
+            return (Quaternion)values[index].unserializedValue;
         }
     }
 }

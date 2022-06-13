@@ -21,15 +21,14 @@ namespace SkyBridge
 
         public void Host(int maxPlayers)
         {
+            SkyBridge.maxPlayers = maxPlayers;
+
             connection.SendPacket(new Packet("HOST").AddValue(maxPlayers));
         }
 
         public void Join(string ID)
         {
-            SkyBridge.currentRoom = new SkyBridge.Room()
-            {
-                ID = ID
-            };
+            SkyBridge.roomID = ID;
 
             connection.SendPacket(new Packet("JOIN").AddValue(ID));
         }
@@ -43,13 +42,12 @@ namespace SkyBridge
 
                 SkyBridge.isHost = true;
 
-                SkyBridge.currentRoom = new SkyBridge.Room()
-                {
-                    ID = ID
-                };
+                SkyBridge.roomID = ID;
 
                 SkyBridge.client = new SkyBridge.Client(clientID);
                 SkyBridge.connection = connection;
+
+                SkyBridge.clients = new List<SkyBridge.Client>() { SkyBridge.client };
 
                 SceneManager.LoadScene("Game");
             }else if (packet.packetType == "JOIN_REJECTED")
@@ -62,13 +60,12 @@ namespace SkyBridge
             {
                 string clientID = packet.GetString(0);
 
-                SkyBridge.currentRoom = new SkyBridge.Room()
-                {
-                    ID = "Unkown"
-                };
+                SkyBridge.roomID = "Unkown";
 
                 SkyBridge.client = new SkyBridge.Client(clientID);
                 SkyBridge.connection = connection;
+
+                SkyBridge.clients = new List<SkyBridge.Client>() { SkyBridge.client };
 
                 SceneManager.LoadScene("Game");
             }

@@ -8,8 +8,6 @@ namespace SkyBridge
     [CustomEditor(typeof(SkyBridge))]
     public class SkyBridgeEditor : Editor
     {
-        string targetID = "host";
-
         public override void OnInspectorGUI()
         {
             SkyBridge skyBridge = (SkyBridge)target;
@@ -17,21 +15,17 @@ namespace SkyBridge
             if (EditorApplication.isPlaying)
             {
                 GUILayout.Label("State: " + SkyBridge.connection.connectionMode);
-                GUILayout.Label("Room ID: " + SkyBridge.currentRoom.ID);
+                GUILayout.Label("Room ID: " + SkyBridge.roomID);
                 GUILayout.Label("Is Host: " + SkyBridge.isHost);
                 GUILayout.Label("My ID: " + SkyBridge.client.ID);
 
-                GUILayout.BeginHorizontal();
+                GUILayout.Space(10);
 
-                GUILayout.Label("Target ID: ");
+                GUILayout.Label("Clients: ");
 
-                targetID = GUILayout.TextField(targetID);
-
-                GUILayout.EndHorizontal();
-
-                if (GUILayout.Button("Send"))
+                foreach (SkyBridge.Client client in SkyBridge.clients)
                 {
-                    SkyBridge.SendSmartPacket(new Packet("DEBUG").AddValue("WORKED!"), targetID);
+                    GUILayout.Label(client.ID);
                 }
             }
             else

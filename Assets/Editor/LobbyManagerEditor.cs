@@ -9,7 +9,7 @@ namespace SkyBridge
     public class LobbyManagerEditor : Editor
     {
         string roomID = "Room ID";
-        int maxPlayers = 1;
+        int maxPlayers = 2;
 
         public override void OnInspectorGUI()
         {

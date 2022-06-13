@@ -27,11 +27,6 @@ namespace SkyBridge {
             public Handler onHandler;
         }
 
-        public class Room
-        {
-            public string ID;
-        }
-
         public static int bufferSize = 4096;
         public static int sendRate = 60;
         public static float timeout = 30;
@@ -39,10 +34,13 @@ namespace SkyBridge {
 
         public static bool isHost = false;
 
-        public static Room currentRoom;
+        public static string roomID;
 
         public static Client client;
         public static Connection connection;
+        public static List<Client> clients;
+
+        public static int maxPlayers;
 
         public static List<RemoteFunction> remoteFunctions = new List<RemoteFunction>();
 
@@ -50,12 +48,25 @@ namespace SkyBridge {
         {
             connection.onPacketRecieved = HandlePacket;
 
-            AddRemoteFunction("DEBUG", onDebug);
+            AddRemoteFunction("REGISTER_NETWORKED_OBJECT", RegisterNetworkedObject);
         }
 
-        public void onDebug(Connection connection, string source, Packet packet)
+        public void RegisterNetworkedObject(Connection connection, string source, Packet packet)
         {
-            Debug.Log(packet.GetString(0));
+            string ID = packet.GetString(0);
+            string name = packet.GetString(1);
+            Vector3 position = packet.GetVector3(2);
+            Quaternion rotation = packet.GetQuaternion(3);
+
+            //Debug.Log(position);
+            //Debug.Log(rotation);
+            //Debug.Log(name);
+
+            GameObject o = Instantiate(Resources.Load<GameObject>(name), position, rotation);
+
+            NetworkedObject networkedObject = o.GetComponent<NetworkedObject>();
+            networkedObject.ID = ID;
+            networkedObject.isRegistered = true;
         }
 
         private void Update()
@@ -69,6 +80,33 @@ namespace SkyBridge {
                 ID = ID,
                 onHandler = handler
             });
+        }
+
+        public static void Send(Packet packet, string target)
+        {
+            SendSmartPacket(packet, target);
+        }
+
+        public static void SendEveryone(Packet packet)
+        {
+            foreach (Client _client in clients)
+            {
+                if (_client.ID == client.ID) continue;
+
+                SendSmartPacket(packet, _client.ID);
+            }
+        }
+
+        public static void SendEveryoneExcept(Packet packet, string target)
+        {
+            foreach (Client _client in clients)
+            {
+                if (_client.ID == client.ID) continue;
+
+                if (_client.ID == target) continue;
+
+                SendSmartPacket(packet, _client.ID);
+            }
         }
 
         public static void SendSmartPacket(Packet packet, string target)
@@ -85,12 +123,16 @@ namespace SkyBridge {
             if (packet.packetType == "DEBUG")
             {
                 Debug.Log(packet.GetString(0));
-            }else if (packet.packetType == "RELAY")
+            } else if (packet.packetType == "PLAYER_JOINED") {
+                string ID = packet.GetString(0);
+
+                clients.Add(new Client(ID));
+            } else if (packet.packetType == "RELAY")
             {
                 string ID = packet.GetString(0);
                 string source = packet.GetString(1);
 
-                Packet newPacket = new Packet(packet.packetType);
+                Packet newPacket = new Packet(ID);
                 newPacket.values = packet.values.GetRange(2, packet.values.Count - 2);
 
                 foreach (RemoteFunction remoteFunction in remoteFunctions.FindAll(remoteFunction => remoteFunction.ID == ID))
