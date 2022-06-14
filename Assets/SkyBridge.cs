@@ -44,11 +44,14 @@ namespace SkyBridge {
 
         public static List<RemoteFunction> remoteFunctions = new List<RemoteFunction>();
 
+        public static Dictionary<string, NetworkedObject> registeredNetworkedObjects = new Dictionary<string, NetworkedObject>();
+
         private void Start()
         {
             connection.onPacketRecieved = HandlePacket;
 
             AddRemoteFunction("REGISTER_NETWORKED_OBJECT", RegisterNetworkedObject);
+            AddRemoteFunction("NETWORKED_TRANSFORM_UPDATE", NetworkedTransformUpdate);
         }
 
         public void RegisterNetworkedObject(Connection connection, string source, Packet packet)
@@ -58,15 +61,31 @@ namespace SkyBridge {
             Vector3 position = packet.GetVector3(2);
             Quaternion rotation = packet.GetQuaternion(3);
 
-            //Debug.Log(position);
-            //Debug.Log(rotation);
-            //Debug.Log(name);
-
             GameObject o = Instantiate(Resources.Load<GameObject>(name), position, rotation);
 
             NetworkedObject networkedObject = o.GetComponent<NetworkedObject>();
             networkedObject.ID = ID;
             networkedObject.isRegistered = true;
+
+            registeredNetworkedObjects.Add(ID, networkedObject);
+        }
+
+        public void NetworkedTransformUpdate(Connection connection, string source, Packet packet)
+        {
+            string ID = packet.GetString(0);
+            Vector3 pos = packet.GetVector3(1);
+            Quaternion rot = packet.GetQuaternion(2);
+
+            if (!registeredNetworkedObjects.ContainsKey(ID)) return;
+
+            NetworkedObject networkObject = registeredNetworkedObjects[ID];
+
+            NetworkedTransform networkTransform = networkObject.GetComponent<NetworkedTransform>();
+
+            networkTransform.targetPostion = pos;
+            networkTransform.targetRotation = rot;
+
+            networkTransform.OnUpdate();
         }
 
         private void Update()

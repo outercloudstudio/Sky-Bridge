@@ -31,7 +31,11 @@ namespace SkyBridge
 
             ID = Guid.NewGuid().ToString();
 
+            SkyBridge.registeredNetworkedObjects.Add(ID, this);
+
             SkyBridge.SendEveryone(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(ID).AddValue(name.Substring(0, name.Length - 7)).AddValue(transform.position).AddValue(transform.rotation));
+
+            Debug.Log("Registed " + ID);
         }
     }
 }

@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 789251622759414002}
   - component: {fileID: 1686334795193710070}
   - component: {fileID: 5629822914449453121}
+  - component: {fileID: 4385907287938756509}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -112,6 +113,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba4a48cca595f7946a29da1500a86034, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  owner: 
+  isOwner: 0
+  ID: 
+  isRegistered: 0
 --- !u!114 &1686334795193710070
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124,6 +129,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ce348932291c5048a0bc763ae5d1ae1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ticksPerUpdate: 10
+  interpolationMode: 2
+  interpolationSpeed: 1
+  targetPostion: {x: 0, y: 0, z: 0}
+  targetRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!54 &5629822914449453121
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -140,3 +150,15 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &4385907287938756509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242712466810677452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53666c3f536250c44af312e8d21f10c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

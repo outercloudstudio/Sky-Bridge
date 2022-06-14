@@ -163,7 +163,7 @@ namespace SkyBridge
 
                                 if (sendBuffer.Length + packetBytes.Length >= SkyBridge.bufferSize) break;
 
-                                Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
+                                //Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
 
                                 byte[] extendedBytes = new byte[sendBuffer.Length + packetBytes.Length];
 
@@ -228,11 +228,6 @@ namespace SkyBridge
                             else
                             {
                                 //Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
-
-                                if(packet.packetType == "RELAY")
-                                {
-                                    Debug.Log(packet.GetVector3(4));
-                                }
 
                                 readQueue.Add(packet);
                             }

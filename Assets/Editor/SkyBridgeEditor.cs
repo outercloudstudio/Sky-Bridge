@@ -15,7 +15,7 @@ namespace SkyBridge
             if (EditorApplication.isPlaying)
             {
                 GUILayout.Label("State: " + SkyBridge.connection.connectionMode);
-                GUILayout.Label("Room ID: " + SkyBridge.roomID);
+                GUILayout.TextField(SkyBridge.roomID);
                 GUILayout.Label("Is Host: " + SkyBridge.isHost);
                 GUILayout.Label("My ID: " + SkyBridge.client.ID);
 
