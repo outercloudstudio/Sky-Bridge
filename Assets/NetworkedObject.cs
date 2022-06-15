@@ -14,15 +14,14 @@ namespace SkyBridge
 
         public bool isRegistered;
 
-        private void Start()
+        private void Awake()
         {
-            if (!isRegistered)
-            {
-                isOwner = true;
-                owner = SkyBridge.client.ID;
+            if (SkyBridge.justRegisteredRemoteNetworkedObject) return;
 
-                Register();
-            }
+            isOwner = true;
+            owner = SkyBridge.client.ID;
+
+            Register();
         }
 
         public void Register()
@@ -34,8 +33,13 @@ namespace SkyBridge
             SkyBridge.registeredNetworkedObjects.Add(ID, this);
 
             SkyBridge.SendEveryone(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(ID).AddValue(name.Substring(0, name.Length - 7)).AddValue(transform.position).AddValue(transform.rotation));
+        }
 
-            Debug.Log("Registed " + ID);
+        public void RemoteRegister(string _ID)
+        {
+            isRegistered = true;
+
+            ID = _ID;
         }
     }
 }

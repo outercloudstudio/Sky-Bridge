@@ -46,6 +46,8 @@ namespace SkyBridge {
 
         public static Dictionary<string, NetworkedObject> registeredNetworkedObjects = new Dictionary<string, NetworkedObject>();
 
+        public static bool justRegisteredRemoteNetworkedObject;
+
         private void Start()
         {
             connection.onPacketRecieved = HandlePacket;
@@ -61,11 +63,12 @@ namespace SkyBridge {
             Vector3 position = packet.GetVector3(2);
             Quaternion rotation = packet.GetQuaternion(3);
 
+            justRegisteredRemoteNetworkedObject = true;
+
             GameObject o = Instantiate(Resources.Load<GameObject>(name), position, rotation);
 
             NetworkedObject networkedObject = o.GetComponent<NetworkedObject>();
-            networkedObject.ID = ID;
-            networkedObject.isRegistered = true;
+            networkedObject.RemoteRegister(ID);
 
             registeredNetworkedObjects.Add(ID, networkedObject);
         }
@@ -82,10 +85,7 @@ namespace SkyBridge {
 
             NetworkedTransform networkTransform = networkObject.GetComponent<NetworkedTransform>();
 
-            networkTransform.targetPostion = pos;
-            networkTransform.targetRotation = rot;
-
-            networkTransform.OnUpdate();
+            networkTransform.OnUpdate(pos, rot);
         }
 
         private void Update()

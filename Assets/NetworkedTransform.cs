@@ -54,16 +54,17 @@ namespace SkyBridge
             targetRotation = transform.rotation;
         }
 
-        public void OnUpdate()
+        public void OnUpdate(Vector3 pos, Quaternion rot)
         {
             packetTickDelay = (packetTickDelay + ticksSinceLastPacket) / 2f;
 
             ticksSinceLastPacket = 0;
 
+            targetPostion = pos;
+            targetRotation = Assert(rot);
+
             lastPostion = transform.position;
             lastRotation = transform.rotation;
-
-            targetRotation = Assert(targetRotation);
 
             if (interpolationMode == InterpolationMode.None)
             {
