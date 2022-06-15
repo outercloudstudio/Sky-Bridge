@@ -53,6 +53,7 @@ namespace SkyBridge {
             connection.onPacketRecieved = HandlePacket;
 
             AddRemoteFunction("REGISTER_NETWORKED_OBJECT", RegisterNetworkedObject);
+            AddRemoteFunction("UNREGISTER_NETWORKED_OBJECT", UnregisterNetworkedObject);
             AddRemoteFunction("NETWORKED_TRANSFORM_UPDATE", NetworkedTransformUpdate);
             AddRemoteFunction("ADD_CLIENT", AddClient);
         }
@@ -73,6 +74,18 @@ namespace SkyBridge {
             networkedObject.RemoteRegister(ID);
 
             registeredNetworkedObjects.Add(ID, networkedObject);
+
+            justRegisteredRemoteNetworkedObject = false;
+        }
+
+        public void UnregisterNetworkedObject(Connection connection, string source, Packet packet)
+        {
+            string ID = packet.GetString(0);
+
+            NetworkedObject networkedObject = registeredNetworkedObjects[ID];
+            Destroy(networkedObject.gameObject);
+
+            registeredNetworkedObjects.Remove(ID);
         }
 
         public void NetworkedTransformUpdate(Connection connection, string source, Packet packet)

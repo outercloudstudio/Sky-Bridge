@@ -43,5 +43,12 @@ namespace SkyBridge
 
             ID = _ID;
         }
+
+        private void OnDestroy()
+        {
+            if (!isOwner) return;
+
+            SkyBridge.SendEveryone(new Packet("UNREGISTER_NETWORKED_OBJECT").AddValue(ID));
+        }
     }
 }
