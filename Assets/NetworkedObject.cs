@@ -14,6 +14,8 @@ namespace SkyBridge
 
         public bool isRegistered;
 
+        public string prefabKey;
+
         private void Awake()
         {
             if (SkyBridge.justRegisteredRemoteNetworkedObject) return;
@@ -32,7 +34,7 @@ namespace SkyBridge
 
             SkyBridge.registeredNetworkedObjects.Add(ID, this);
 
-            SkyBridge.SendEveryone(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(ID).AddValue(name.Substring(0, name.Length - 7)).AddValue(transform.position).AddValue(transform.rotation));
+            SkyBridge.SendEveryone(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(ID).AddValue(prefabKey).AddValue(transform.position).AddValue(transform.rotation));
         }
 
         public void RemoteRegister(string _ID)

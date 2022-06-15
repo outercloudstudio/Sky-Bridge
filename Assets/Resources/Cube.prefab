@@ -117,6 +117,7 @@ MonoBehaviour:
   isOwner: 0
   ID: 
   isRegistered: 0
+  prefabKey: Cube
 --- !u!114 &1686334795193710070
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -59,13 +59,13 @@ namespace SkyBridge {
         public void RegisterNetworkedObject(Connection connection, string source, Packet packet)
         {
             string ID = packet.GetString(0);
-            string name = packet.GetString(1);
+            string prefabKey = packet.GetString(1);
             Vector3 position = packet.GetVector3(2);
             Quaternion rotation = packet.GetQuaternion(3);
 
             justRegisteredRemoteNetworkedObject = true;
 
-            GameObject o = Instantiate(Resources.Load<GameObject>(name), position, rotation);
+            GameObject o = Instantiate(Resources.Load<GameObject>(prefabKey), position, rotation);
 
             NetworkedObject networkedObject = o.GetComponent<NetworkedObject>();
             networkedObject.RemoteRegister(ID);
@@ -146,6 +146,11 @@ namespace SkyBridge {
                 string ID = packet.GetString(0);
 
                 clients.Add(new Client(ID));
+
+                foreach (KeyValuePair<string, NetworkedObject> key in registeredNetworkedObjects)
+                {
+                    Send(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(key.Key).AddValue(key.Value.prefabKey).AddValue(key.Value.transform.position).AddValue(key.Value.transform.rotation), ID);
+                }
             } else if (packet.packetType == "RELAY")
             {
                 string ID = packet.GetString(0);
