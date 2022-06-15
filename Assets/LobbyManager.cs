@@ -65,7 +65,7 @@ namespace SkyBridge
                 SkyBridge.client = new SkyBridge.Client(clientID);
                 SkyBridge.connection = connection;
 
-                SkyBridge.clients = new List<SkyBridge.Client>() { SkyBridge.client };
+                SkyBridge.clients = new List<SkyBridge.Client>();
 
                 SceneManager.LoadScene("Game");
             }

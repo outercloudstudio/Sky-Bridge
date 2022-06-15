@@ -54,8 +54,10 @@ namespace SkyBridge {
 
             AddRemoteFunction("REGISTER_NETWORKED_OBJECT", RegisterNetworkedObject);
             AddRemoteFunction("NETWORKED_TRANSFORM_UPDATE", NetworkedTransformUpdate);
+            AddRemoteFunction("ADD_CLIENT", AddClient);
         }
 
+        #region Native Remote Function Handlers
         public void RegisterNetworkedObject(Connection connection, string source, Packet packet)
         {
             string ID = packet.GetString(0);
@@ -87,6 +89,14 @@ namespace SkyBridge {
 
             networkTransform.OnUpdate(pos, rot);
         }
+
+        public void AddClient(Connection connection, string source, Packet packet)
+        {
+            string ID = packet.GetString(0);
+
+            clients.Add(new Client(ID));
+        }
+        #endregion
 
         private void Update()
         {
@@ -146,6 +156,13 @@ namespace SkyBridge {
                 string ID = packet.GetString(0);
 
                 clients.Add(new Client(ID));
+
+                if (!isHost) return;
+
+                foreach (Client client in clients)
+                {
+                    Send(new Packet("ADD_CLIENT").AddValue(client.ID), ID);
+                }
 
                 foreach (KeyValuePair<string, NetworkedObject> key in registeredNetworkedObjects)
                 {
