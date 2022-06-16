@@ -62,16 +62,17 @@ namespace SkyBridge {
         public void RegisterNetworkedObject(Connection connection, string source, Packet packet)
         {
             string ID = packet.GetString(0);
-            string prefabKey = packet.GetString(1);
-            Vector3 position = packet.GetVector3(2);
-            Quaternion rotation = packet.GetQuaternion(3);
+            string owner = packet.GetString(1);
+            string prefabKey = packet.GetString(2);
+            Vector3 position = packet.GetVector3(3);
+            Quaternion rotation = packet.GetQuaternion(4);
 
             justRegisteredRemoteNetworkedObject = true;
 
             GameObject o = Instantiate(Resources.Load<GameObject>(prefabKey), position, rotation);
 
             NetworkedObject networkedObject = o.GetComponent<NetworkedObject>();
-            networkedObject.RemoteRegister(ID);
+            networkedObject.RemoteRegister(ID, owner);
 
             registeredNetworkedObjects.Add(ID, networkedObject);
 
@@ -165,7 +166,8 @@ namespace SkyBridge {
             if (packet.packetType == "DEBUG")
             {
                 Debug.Log(packet.GetString(0));
-            } else if (packet.packetType == "PLAYER_JOINED") {
+            }
+            else if (packet.packetType == "PLAYER_JOINED") {
                 string ID = packet.GetString(0);
 
                 clients.Add(new Client(ID));
@@ -179,9 +181,29 @@ namespace SkyBridge {
 
                 foreach (KeyValuePair<string, NetworkedObject> key in registeredNetworkedObjects)
                 {
-                    Send(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(key.Key).AddValue(key.Value.prefabKey).AddValue(key.Value.transform.position).AddValue(key.Value.transform.rotation), ID);
+                    Send(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(key.Key).AddValue(key.Value.owner).AddValue(key.Value.prefabKey).AddValue(key.Value.transform.position).AddValue(key.Value.transform.rotation), ID);
                 }
-            } else if (packet.packetType == "RELAY")
+            }
+            else if (packet.packetType == "PLAYER_LEFT")
+            {
+                string ID = packet.GetString(0);
+
+                clients.RemoveAt(clients.FindIndex(_client => _client.ID == ID));
+
+                if (!isHost) return;
+
+                foreach (KeyValuePair<string, NetworkedObject> key in registeredNetworkedObjects)
+                {
+                    if (key.Value.owner != ID) return;
+
+                    Packet unregisterPacket = new Packet("UNREGISTER_NETWORKED_OBJECT").AddValue(key.Value);
+
+                    SendEveryoneExcept(unregisterPacket, client.ID);
+
+                    UnregisterNetworkedObject(null, client.ID, unregisterPacket);
+                }
+            }
+            else if (packet.packetType == "RELAY")
             {
                 string ID = packet.GetString(0);
                 string source = packet.GetString(1);

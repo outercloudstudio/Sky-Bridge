@@ -494,7 +494,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   timer: 0
-  delay: 1
+  delay: 100
   cube: {fileID: 1242712466810677452, guid: fe18dfeb89a97c6449f903b76dd4dd90, type: 3}
 --- !u!1 &1792321921
 GameObject:
