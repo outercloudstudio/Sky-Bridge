@@ -97,7 +97,7 @@ namespace SkyBridge
         {
             lock (sendQueue)
             {
-                Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port);
+                //Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port);
                 sendQueue.Add(packet);
             }
         }
@@ -111,7 +111,7 @@ namespace SkyBridge
             {
                 foreach (Packet packet in readQueue)
                 {
-                    Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
+                    //Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
                     if (onPacketRecieved != null) onPacketRecieved(this, packet);
                 }
 

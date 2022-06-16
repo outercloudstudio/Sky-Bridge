@@ -11,7 +11,7 @@ public class Cube : MonoBehaviour
     {
         networkedObject = GetComponent<NetworkedObject>();
 
-       // GetComponent<Rigidbody>().isKinematic = !networkedObject.isOwner;
+        GetComponent<Rigidbody>().isKinematic = !networkedObject.isOwner;
     }
 
     private void Update()

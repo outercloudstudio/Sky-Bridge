@@ -19,6 +19,12 @@ namespace SkyBridge {
             }
         }
 
+        public enum PacketPersistance
+        {
+            Unpersistent,
+            Persistent
+        }
+
         public class RemoteFunction
         {
             public string ID;
@@ -48,6 +54,8 @@ namespace SkyBridge {
 
         public static bool justRegisteredRemoteNetworkedObject;
 
+        public static List<Packet> persistentPackets = new List<Packet>();
+
         private void Start()
         {
             connection.onPacketRecieved = HandlePacket;
@@ -60,6 +68,7 @@ namespace SkyBridge {
         }
 
         #region Native Remote Function Handlers
+        
         public void RegisterNetworkedObject(Connection connection, string source, Packet packet)
         {
             string ID = packet.GetString(0);
@@ -127,6 +136,11 @@ namespace SkyBridge {
             string ID = packet.GetString(0);
 
             clients.Add(new Client(ID));
+
+            foreach (Packet _packet in persistentPackets)
+            {
+                Send(_packet, ID);
+            }
         }
         #endregion
 
@@ -148,8 +162,10 @@ namespace SkyBridge {
             SendSmartPacket(packet, target);
         }
 
-        public static void SendEveryone(Packet packet)
+        public static void SendEveryone(Packet packet, PacketPersistance persistance = PacketPersistance.Unpersistent)
         {
+            if (persistance == PacketPersistance.Persistent) persistentPackets.Add(packet);
+
             foreach (Client _client in clients)
             {
                 if (_client.ID == client.ID) continue;
@@ -158,8 +174,10 @@ namespace SkyBridge {
             }
         }
 
-        public static void SendEveryoneExcept(Packet packet, string target)
+        public static void SendEveryoneExcept(Packet packet, string target, PacketPersistance persistance = PacketPersistance.Unpersistent)
         {
+            if (persistance == PacketPersistance.Persistent) persistentPackets.Add(packet);
+
             foreach (Client _client in clients)
             {
                 if (_client.ID == client.ID) continue;
@@ -181,11 +199,7 @@ namespace SkyBridge {
 
         public void HandlePacket(Connection connection, Packet packet)
         {
-            if (packet.packetType == "DEBUG")
-            {
-                Debug.Log(packet.GetString(0));
-            }
-            else if (packet.packetType == "PLAYER_JOINED") {
+            if (packet.packetType == "PLAYER_JOINED") {
                 string ID = packet.GetString(0);
 
                 clients.Add(new Client(ID));
@@ -200,6 +214,11 @@ namespace SkyBridge {
                 foreach (KeyValuePair<string, NetworkedObject> key in registeredNetworkedObjects)
                 {
                     Send(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(key.Key).AddValue(key.Value.owner).AddValue(key.Value.prefabKey).AddValue(key.Value.transform.position).AddValue(key.Value.transform.rotation), ID);
+                }
+
+                foreach (Packet _packet in persistentPackets)
+                {
+                    Send(_packet, ID);
                 }
             }
             else if (packet.packetType == "PLAYER_LEFT")
@@ -216,7 +235,7 @@ namespace SkyBridge {
 
                     Packet unregisterPacket = new Packet("UNREGISTER_NETWORKED_OBJECT").AddValue(key.Value);
 
-                    SendEveryoneExcept(unregisterPacket, client.ID);
+                    SendEveryone(unregisterPacket);
 
                     UnregisterNetworkedObject(null, client.ID, unregisterPacket);
                 }

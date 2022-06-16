@@ -158,8 +158,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ce348932291c5048a0bc763ae5d1ae1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ticksPerUpdate: 4
-  interpolationMode: 1
+  ticksPerUpdate: 40
+  interpolationMode: 2
   interpolationSpeed: 1
   targetPostion: {x: 0, y: 0, z: 0}
   targetRotation: {x: 0, y: 0, z: 0, w: 0}
