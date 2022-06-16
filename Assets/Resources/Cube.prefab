@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 3029414398220087558}
   - component: {fileID: 7774645747011862195}
   - component: {fileID: 789251622759414002}
-  - component: {fileID: 1686334795193710070}
   - component: {fileID: 5629822914449453121}
   - component: {fileID: 4385907287938756509}
+  - component: {fileID: -3705406994329668501}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -118,23 +118,6 @@ MonoBehaviour:
   ID: 
   isRegistered: 0
   prefabKey: Cube
---- !u!114 &1686334795193710070
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1242712466810677452}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ce348932291c5048a0bc763ae5d1ae1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ticksPerUpdate: 10
-  interpolationMode: 2
-  interpolationSpeed: 1
-  targetPostion: {x: 0, y: 0, z: 0}
-  targetRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!54 &5629822914449453121
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -163,3 +146,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53666c3f536250c44af312e8d21f10c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-3705406994329668501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242712466810677452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ce348932291c5048a0bc763ae5d1ae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ticksPerUpdate: 4
+  interpolationMode: 1
+  interpolationSpeed: 1
+  targetPostion: {x: 0, y: 0, z: 0}
+  targetRotation: {x: 0, y: 0, z: 0, w: 0}

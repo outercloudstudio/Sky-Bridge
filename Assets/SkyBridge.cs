@@ -55,6 +55,7 @@ namespace SkyBridge {
             AddRemoteFunction("REGISTER_NETWORKED_OBJECT", RegisterNetworkedObject);
             AddRemoteFunction("UNREGISTER_NETWORKED_OBJECT", UnregisterNetworkedObject);
             AddRemoteFunction("NETWORKED_TRANSFORM_UPDATE", NetworkedTransformUpdate);
+            AddRemoteFunction("NETWORKED_RIGIDBODY_UPDATE", NetworkedRigidbodyUpdate);
             AddRemoteFunction("ADD_CLIENT", AddClient);
         }
 
@@ -102,6 +103,23 @@ namespace SkyBridge {
             NetworkedTransform networkTransform = networkObject.GetComponent<NetworkedTransform>();
 
             networkTransform.OnUpdate(pos, rot);
+        }
+
+        public void NetworkedRigidbodyUpdate(Connection connection, string source, Packet packet)
+        {
+            string ID = packet.GetString(0);
+            Vector3 pos = packet.GetVector3(1);
+            Quaternion rot = packet.GetQuaternion(2);
+            Vector3 vel = packet.GetVector3(3);
+            Vector3 angVel = packet.GetVector3(4);
+
+            if (!registeredNetworkedObjects.ContainsKey(ID)) return;
+
+            NetworkedObject networkObject = registeredNetworkedObjects[ID];
+
+            NetworkedRigidbody networkRigidbody = networkObject.GetComponent<NetworkedRigidbody>();
+
+            networkRigidbody.OnUpdate(pos, rot, vel, angVel);
         }
 
         public void AddClient(Connection connection, string source, Packet packet)
