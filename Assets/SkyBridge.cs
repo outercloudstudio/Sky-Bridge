@@ -157,12 +157,12 @@ namespace SkyBridge {
             });
         }
 
-        public static void Send(Packet packet, string target)
+        public static void Send(Packet packet, string target, Connection.PacketReliability reliability = Connection.PacketReliability.RELIABLE)
         {
-            SendSmartPacket(packet, target);
+            SendSmartPacket(packet, target, reliability);
         }
 
-        public static void SendEveryone(Packet packet, PacketPersistance persistance = PacketPersistance.UNPERSISTENT)
+        public static void SendEveryone(Packet packet, PacketPersistance persistance = PacketPersistance.UNPERSISTENT, Connection.PacketReliability reliability = Connection.PacketReliability.RELIABLE)
         {
             if (persistance == PacketPersistance.PERSISTENT) persistentPackets.Add(packet);
 
@@ -170,11 +170,11 @@ namespace SkyBridge {
             {
                 if (_client.ID == client.ID) continue;
 
-                SendSmartPacket(packet, _client.ID);
+                SendSmartPacket(packet, _client.ID, reliability);
             }
         }
 
-        public static void SendEveryoneExcept(Packet packet, string target, PacketPersistance persistance = PacketPersistance.UNPERSISTENT)
+        public static void SendEveryoneExcept(Packet packet, string target, PacketPersistance persistance = PacketPersistance.UNPERSISTENT, Connection.PacketReliability reliability = Connection.PacketReliability.RELIABLE)
         {
             if (persistance == PacketPersistance.PERSISTENT) persistentPackets.Add(packet);
 
@@ -184,17 +184,17 @@ namespace SkyBridge {
 
                 if (_client.ID == target) continue;
 
-                SendSmartPacket(packet, _client.ID);
+                SendSmartPacket(packet, _client.ID, reliability);
             }
         }
 
-        public static void SendSmartPacket(Packet packet, string target)
+        public static void SendSmartPacket(Packet packet, string target, Connection.PacketReliability reliability = Connection.PacketReliability.RELIABLE)
         {
             packet.values.Insert(0, new Packet.SerializedValue(target));
             packet.values.Insert(0, new Packet.SerializedValue(packet.packetType));
             packet.packetType = "RELAY";
 
-            connection.SendPacket(packet);
+            connection.SendPacket(packet, reliability);
         }
 
         public void HandlePacket(Connection connection, Packet packet)

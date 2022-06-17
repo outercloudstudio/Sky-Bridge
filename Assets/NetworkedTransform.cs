@@ -82,7 +82,8 @@ namespace SkyBridge
             {
                 if (ticksTillUpdate <= 0)
                 {
-                    SkyBridge.SendEveryone(new Packet("NETWORKED_TRANSFORM_UPDATE").AddValue(networkObject.ID).AddValue(transform.position).AddValue(transform.rotation));
+                    SkyBridge.SendEveryone(new Packet("NETWORKED_TRANSFORM_UPDATE").AddValue(networkObject.ID).AddValue(transform.position).AddValue(transform.rotation), SkyBridge.PacketPersistance.UNPERSISTENT, Connection.PacketReliability.UNRELIABLE);
+                    SkyBridge.Send(new Packet("NETWORKED_TRANSFORM_UPDATE").AddValue(networkObject.ID).AddValue(transform.position).AddValue(transform.rotation), SkyBridge.client.ID, Connection.PacketReliability.UNRELIABLE);
 
                     ticksTillUpdate = ticksPerUpdate;
                 }

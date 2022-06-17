@@ -69,9 +69,9 @@ namespace SkyBridge
                             lobbyManager.connection.Disconnect();
                         }
 
-                        if(GUILayout.Button("SEND UDP"))
+                        if (GUILayout.Button("UDP"))
                         {
-                            lobbyManager.connection.SendPacket(new Packet("HOI THERE!"), Connection.PacketReliability.UNRELIABLE);
+                            lobbyManager.connection.SendPacket(new Packet("UDP"), Connection.PacketReliability.UNRELIABLE);
                         }
                     }
                 }
