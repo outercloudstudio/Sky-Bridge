@@ -21,8 +21,8 @@ namespace SkyBridge {
 
         public enum PacketPersistance
         {
-            Unpersistent,
-            Persistent
+            UNPERSISTENT,
+            PERSISTENT
         }
 
         public class RemoteFunction
@@ -162,9 +162,9 @@ namespace SkyBridge {
             SendSmartPacket(packet, target);
         }
 
-        public static void SendEveryone(Packet packet, PacketPersistance persistance = PacketPersistance.Unpersistent)
+        public static void SendEveryone(Packet packet, PacketPersistance persistance = PacketPersistance.UNPERSISTENT)
         {
-            if (persistance == PacketPersistance.Persistent) persistentPackets.Add(packet);
+            if (persistance == PacketPersistance.PERSISTENT) persistentPackets.Add(packet);
 
             foreach (Client _client in clients)
             {
@@ -174,9 +174,9 @@ namespace SkyBridge {
             }
         }
 
-        public static void SendEveryoneExcept(Packet packet, string target, PacketPersistance persistance = PacketPersistance.Unpersistent)
+        public static void SendEveryoneExcept(Packet packet, string target, PacketPersistance persistance = PacketPersistance.UNPERSISTENT)
         {
-            if (persistance == PacketPersistance.Persistent) persistentPackets.Add(packet);
+            if (persistance == PacketPersistance.PERSISTENT) persistentPackets.Add(packet);
 
             foreach (Client _client in clients)
             {

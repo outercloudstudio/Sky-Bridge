@@ -1,9 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -76,15 +73,7 @@ namespace SkyBridge
 
         private void Start()
         {
-            UdpClient udpClient = new UdpClient(11001);
-
-            udpClient.Connect("localhost", 11000);
-
-            byte[] sendBytes = Encoding.ASCII.GetBytes("Is anybody there?");
-
-            udpClient.Send(sendBytes, sendBytes.Length);
-
-            udpClient.Close();
+            
         }
 
         private void Update()
