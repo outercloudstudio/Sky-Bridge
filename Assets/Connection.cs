@@ -85,8 +85,6 @@ namespace SkyBridge
 
         public void BeginUDP(int port)
         {
-            Debug.Log("Begginning UDP! " + port);
-
             UDPClient.Connect(IP, port);
 
             dataListenerUnreliableThread = new Thread(ListenLoopUnreliable);
@@ -112,10 +110,8 @@ namespace SkyBridge
 
                 StartThreads();
             }
-            catch(Exception ex)
+            catch
             {
-                Debug.LogError(ex);
-
                 Disconnect("Failed to connect!");
             }
         }
@@ -135,7 +131,7 @@ namespace SkyBridge
         {
             lock (sendQueue) lock(sendQueueUnreliable)
             {
-                Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port + " " + reliability);
+                //Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port + " " + reliability);
                 if(reliability == PacketReliability.RELIABLE)
                 {
                     sendQueue.Add(packet);
@@ -156,7 +152,7 @@ namespace SkyBridge
             {
                 foreach (Packet packet in readQueue)
                 {
-                    Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
+                    //Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
                     if (onPacketRecieved != null) onPacketRecieved(this, packet);
                 }
 
@@ -287,7 +283,7 @@ namespace SkyBridge
                             }
                             else
                             {
-                                Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
+                                //Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
 
                                 readQueue.Add(packet);
                             }
@@ -297,10 +293,8 @@ namespace SkyBridge
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.LogError(ex);
-
                 Disconnect("Listen Error");
             }
         }
@@ -325,7 +319,7 @@ namespace SkyBridge
 
                             Packet packet = new Packet(packetBytes, PacketReliability.UNRELIABLE);
 
-                            Debug.Log("Listend Thread: Recieved unreliable packet " + packet.packetType + " from " + IP + ":" + port);
+                            //Debug.Log("Listend Thread: Recieved unreliable packet " + packet.packetType + " from " + IP + ":" + port);
 
                             readQueue.Add(packet);
 
@@ -334,10 +328,8 @@ namespace SkyBridge
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.LogError(ex);
-
                 Disconnect("Unreliable Listen Error");
             }
         }
