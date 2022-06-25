@@ -27,15 +27,11 @@ namespace SkyBridge
 
         public ConnectionMode connectionMode = ConnectionMode.OFFLINE;
 
-        private Thread connectThread;
-
-        private Thread dataListenerThread;
-        private Thread dataListenerUnreliableThread;
-        private Thread dataSenderThread;
-
         private TcpClient TCPClient;
         private UdpClient UDPClient;
+        private int UDPPort;
         private NetworkStream networkStream;
+        private byte[] networkStreamBuffer;
         private IPEndPoint remoteIpEndPoint;
 
         public delegate void PacketRecieved(Connection connection, Packet packet);
@@ -47,11 +43,6 @@ namespace SkyBridge
         private float timeout = SkyBridge.timeout;
         private float keepalive = SkyBridge.keepalive;
 
-        private List<Packet> sendQueue = new List<Packet>();
-        private List<Packet> sendQueueUnreliable = new List<Packet>();
-
-        private List<Packet> readQueue = new List<Packet>();
-
         public void Connect(string _IP, int _port)
         {
             IP = _IP;
@@ -59,87 +50,166 @@ namespace SkyBridge
 
             connectionMode = ConnectionMode.CONNECTING;
 
-            connectThread = new Thread(ConnectThreaded);
-            connectThread.Start();
-        }
-
-        public void Assign(TcpClient _TCPClient, NetworkStream _networkStream)
-        {
-            IP = ((IPEndPoint)_TCPClient.Client.RemoteEndPoint).Address.ToString();
-            port = ((IPEndPoint)_TCPClient.Client.RemoteEndPoint).Port;
-
-            TCPClient = _TCPClient;
-            networkStream = _networkStream;
-
-            int UDPPort = GetOpenPort();
+            UDPPort = GetOpenPort();
 
             UDPClient = new UdpClient(UDPPort);
             remoteIpEndPoint = new IPEndPoint(IPAddress.Any, UDPPort);
 
+            TCPClient = new TcpClient();
+            TCPClient.BeginConnect(_IP, _port, new AsyncCallback(ConnectCallback), null);
+        }
+
+        public void ConnectCallback(IAsyncResult result)
+        {
+            TCPClient.EndConnect(result);
+
+            if (!TCPClient.Connected)
+            {
+                Disconnect("Failed to connect!");
+
+                return;
+            }
+
+            networkStream = TCPClient.GetStream();
+
+            networkStreamBuffer = new byte[SkyBridge.bufferSize];
+            networkStream.BeginRead(networkStreamBuffer, 0, SkyBridge.bufferSize, new AsyncCallback(ReceiveCallback), null);
+
             SendPacket(new Packet("UDP_INFO").AddValue(UDPPort));
 
             connectionMode = ConnectionMode.CONNECTED;
+        }
 
-            StartThreads();
+        public void Assign(TcpClient _TCPClient)
+        {
+            IP = ((IPEndPoint)_TCPClient.Client.RemoteEndPoint).Address.ToString();
+            port = ((IPEndPoint)_TCPClient.Client.RemoteEndPoint).Port;
+
+            UDPPort = GetOpenPort();
+
+            UDPClient = new UdpClient(UDPPort);
+            remoteIpEndPoint = new IPEndPoint(IPAddress.Any, UDPPort);
+
+            TCPClient = _TCPClient;
+            networkStream = _TCPClient.GetStream();
+
+            networkStreamBuffer = new byte[SkyBridge.bufferSize];
+            networkStream.BeginRead(networkStreamBuffer, 0, SkyBridge.bufferSize, new AsyncCallback(ReceiveCallback), null);
+
+            SendPacket(new Packet("UDP_INFO").AddValue(UDPPort));
+
+            connectionMode = ConnectionMode.CONNECTED;
         }
 
         public void BeginUDP(int port)
         {
             UDPClient.Connect(IP, port);
 
-            dataListenerUnreliableThread = new Thread(ListenLoopUnreliable);
-            dataListenerUnreliableThread.Start();
-        }
-
-        public void ConnectThreaded()
-        {
-            try
-            {
-                TCPClient = new TcpClient(IP, port);
-
-                networkStream = TCPClient.GetStream();
-
-                int UDPPort = GetOpenPort();
-
-                UDPClient = new UdpClient(UDPPort);
-                remoteIpEndPoint = new IPEndPoint(IPAddress.Any, UDPPort);
-
-                SendPacket(new Packet("UDP_INFO").AddValue(UDPPort));
-
-                connectionMode = ConnectionMode.CONNECTED;
-
-                StartThreads();
-            }
-            catch
-            {
-                Disconnect("Failed to connect!");
-            }
-        }
-
-        public void StartThreads()
-        {
-            dataSenderThread = new Thread(SendLoop);
-            dataListenerThread = new Thread(ListenLoop);
-            dataListenerUnreliableThread = new Thread(ListenLoopUnreliable);
-
-            dataSenderThread.Start();
-            dataListenerThread.Start();
-            dataListenerUnreliableThread.Start();
+            UDPClient.BeginReceive(new AsyncCallback(ReceiveUnreliableCallback), null);
         }
 
         public void SendPacket(Packet packet, PacketReliability reliability = PacketReliability.RELIABLE)
         {
-            lock (sendQueue) lock(sendQueueUnreliable)
+            byte[] packetBytes = packet.ToBytes();
+
+            if (reliability == PacketReliability.RELIABLE)
             {
-                //Debug.Log("Main Thread: Sending packet " + packet.packetType + " to " + IP + ":" + port + " " + reliability);
-                if(reliability == PacketReliability.RELIABLE)
+                Debug.Log("Sending packet " + packet.packetType + " to " + IP + ":" + port);
+
+                try
                 {
-                    sendQueue.Add(packet);
+                    networkStream.BeginWrite(packetBytes, 0, packetBytes.Length, null, null);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Log(ex);
+
+                    Disconnect("Send Error");
+                }
+            }
+            else
+            {
+                Debug.Log("Sending unreliable packet " + packet.packetType + " to " + IP + ":" + port);
+
+                try
+                {
+                    UDPClient.BeginSend(packetBytes, packetBytes.Length, null, null);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Log(ex);
+
+                    Disconnect("Unreliable Send Error");
+                }
+            }
+        }
+
+        public void ReceiveCallback(IAsyncResult result)
+        {
+            try
+            {
+                int bytesRead = networkStream.EndRead(result);
+
+                Packet packet = new Packet(networkStreamBuffer, PacketReliability.RELIABLE);
+
+                if (packet.packetType == "KEEP_ALIVE")
+                {
+                    timeout = SkyBridge.timeout;
+                }
+                else if (packet.packetType == "UDP_INFO")
+                {
+                    int UDPPort = packet.GetInt(0);
+
+                    BeginUDP(UDPPort);
                 }
                 else
                 {
-                    sendQueueUnreliable.Add(packet);
+                    Debug.Log("Recieved packet " + packet.packetType + " from " + IP + ":" + port);
+
+                    ThreadManager.ExecuteOnMainThread(() =>
+                    {
+                        if (onPacketRecieved != null) onPacketRecieved(this, packet);
+                    });
                 }
+
+                ThreadManager.ExecuteOnMainThread(() =>
+                {
+                    networkStream.BeginRead(networkStreamBuffer, 0, SkyBridge.bufferSize, new AsyncCallback(ReceiveCallback), null);
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex);
+
+                Disconnect("Listen Error");
+            }
+        }
+
+        public void ReceiveUnreliableCallback(IAsyncResult result)
+        {
+            try
+            {
+                byte[] bytes = UDPClient.EndReceive(result, ref remoteIpEndPoint);
+
+                Packet packet = new Packet(bytes, PacketReliability.UNRELIABLE);
+
+                Debug.Log("Recieved unreliable packet " + packet.packetType + " from " + IP + ":" + port);
+
+                ThreadManager.ExecuteOnMainThread(() =>
+                {
+                    if (onPacketRecieved != null) onPacketRecieved(this, packet);
+                });
+
+                ThreadManager.ExecuteOnMainThread(() =>
+                {
+                    UDPClient.BeginReceive(new AsyncCallback(ReceiveUnreliableCallback), null);
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex);
+
+                Disconnect("Unreliable Listen Error");
             }
         }
 
@@ -148,190 +218,14 @@ namespace SkyBridge
             timeout -= delta;
             keepalive -= delta;
 
-            lock (readQueue)
+            if (keepalive <= 0)
             {
-                foreach (Packet packet in readQueue)
-                {
-                    //Debug.Log("Main Thread: Handleing packet " + packet.packetType + " from " + IP + ":" + port);
-                    if (onPacketRecieved != null) onPacketRecieved(this, packet);
-                }
+                SendPacket(new Packet("KEEP_ALIVE"));
 
-                readQueue = new List<Packet>();
+                keepalive = SkyBridge.keepalive;
             }
 
             if (timeout <= 0) Disconnect("Connection timed out");
-        }
-
-        public void SendLoop()
-        {
-            try
-            {
-                while (true)
-                {
-                    lock (sendQueue) lock (sendQueueUnreliable)
-                        {
-                            if (sendQueue.Count > 0 || keepalive <= 0)
-                            {
-                                byte[] sendBuffer = new byte[0];
-
-                                int packetsPacked = 0;
-
-                                if (keepalive <= 0)
-                                {
-                                    keepalive = SkyBridge.keepalive;
-
-                                    Packet packet = new Packet("KEEP_ALIVE");
-
-                                    byte[] packetBytes = packet.ToBytes();
-
-                                    if (sendBuffer.Length + packetBytes.Length < SkyBridge.bufferSize)
-                                    {
-                                        //Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
-
-                                        sendBuffer = packetBytes;
-
-                                        packetsPacked++;
-                                    }
-                                }
-
-                                while (true)
-                                {
-                                    if (sendQueue.Count == 0) break;
-
-                                    Packet packet = sendQueue[0];
-
-                                    byte[] packetBytes = packet.ToBytes();
-
-                                    if (sendBuffer.Length + packetBytes.Length >= SkyBridge.bufferSize) break;
-
-                                    //Debug.Log("Send Thread: Sending Packet " + packet.packetType.ToString() + " to " + IP + ":" + port);
-
-                                    byte[] extendedBytes = new byte[sendBuffer.Length + packetBytes.Length];
-
-                                    Buffer.BlockCopy(sendBuffer, 0, extendedBytes, 0, sendBuffer.Length);
-
-                                    Buffer.BlockCopy(packetBytes, 0, extendedBytes, sendBuffer.Length, packetBytes.Length);
-
-                                    sendBuffer = extendedBytes;
-
-                                    packetsPacked++;
-
-                                    sendQueue.RemoveAt(0);
-                                }
-
-                                if (packetsPacked == 0)
-                                {
-                                    Packet packet = sendQueue[0];
-
-                                    //Debug.Log("Send Thread: Dropping Packet Because It Is Too Large To Send! " + packet.packetType + " Length: " + packet.ToBytes().Length);
-
-                                    sendQueue.RemoveAt(0);
-                                }
-
-                                networkStream.Write(sendBuffer, 0, sendBuffer.Length);
-                            }
-
-                            foreach (Packet packet in sendQueueUnreliable)
-                            {
-                                byte[] packetBytes = packet.ToBytes();
-
-                                UDPClient.Send(packetBytes, packetBytes.Length);
-                            }
-
-                            sendQueueUnreliable = new List<Packet>();
-                        }
-
-                    Thread.Sleep((int)MathF.Floor(1f / SkyBridge.sendRate * 1000f));
-                }
-            }
-            catch
-            {
-                Disconnect("Send Error");
-            }
-        }
-
-        public void ListenLoop()
-        {
-            try
-            {
-                while (true)
-                {
-                    byte[] bytes = new byte[4096];
-
-                    int bytesRead = networkStream.Read(bytes, 0, bytes.Length);
-
-                    lock (readQueue)
-                    {
-                        for (int readPos = 0; readPos < bytesRead;)
-                        {
-                            byte[] packetLengthBytes = bytes[readPos..(readPos + 4)];
-                            int packetLength = BitConverter.ToInt32(packetLengthBytes);
-
-                            byte[] packetBytes = bytes[readPos..(readPos + packetLength)];
-
-                            Packet packet = new Packet(packetBytes, PacketReliability.RELIABLE);
-
-                            if (packet.packetType == "KEEP_ALIVE")
-                            {
-                                timeout = SkyBridge.timeout;
-                            }
-                            else if (packet.packetType == "UDP_INFO")
-                            {
-                                int UDPPort = packet.GetInt(0);
-
-                                BeginUDP(UDPPort);
-                            }
-                            else
-                            {
-                                //Debug.Log("Listend Thread: Recieved packet " + packet.packetType + " from " + IP + ":" + port);
-
-                                readQueue.Add(packet);
-                            }
-
-                            readPos += packetLength;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                Disconnect("Listen Error");
-            }
-        }
-
-        public void ListenLoopUnreliable()
-        {
-            try
-            {
-                while (true)
-                {
-                    byte[] bytes = UDPClient.Receive(ref remoteIpEndPoint);
-                    int bytesRead = bytes.Length;
-
-                    lock (readQueue)
-                    {
-                        for (int readPos = 0; readPos < bytesRead;)
-                        {
-                            byte[] packetLengthBytes = bytes[readPos..(readPos + 4)];
-                            int packetLength = BitConverter.ToInt32(packetLengthBytes);
-
-                            byte[] packetBytes = bytes[readPos..(readPos + packetLength)];
-
-                            Packet packet = new Packet(packetBytes, PacketReliability.UNRELIABLE);
-
-                            //Debug.Log("Listend Thread: Recieved unreliable packet " + packet.packetType + " from " + IP + ":" + port);
-
-                            readQueue.Add(packet);
-
-                            readPos += packetLength;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                Disconnect("Unreliable Listen Error");
-            }
         }
 
         public void Disconnect(string reason = "unkown")
@@ -341,10 +235,6 @@ namespace SkyBridge
             Debug.Log("Disconnected connection " + IP + ":" + port + " because " + reason);
 
             connectionMode = ConnectionMode.DISCONNECTED;
-
-            if (dataListenerThread != null && dataListenerThread.IsAlive) dataListenerThread.Interrupt();
-            if (dataListenerUnreliableThread != null && dataListenerUnreliableThread.IsAlive) dataListenerUnreliableThread.Interrupt();
-            if (dataSenderThread != null && dataSenderThread.IsAlive) dataSenderThread.Interrupt();
 
             if (TCPClient != null && networkStream != null && TCPClient.Connected && UDPClient != null)
             {

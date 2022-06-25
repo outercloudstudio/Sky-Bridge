@@ -147,6 +147,8 @@ namespace SkyBridge {
         private void Update()
         {
             connection.Update(Time.deltaTime);
+
+            ThreadManager.Update();
         }
 
         public static void AddRemoteFunction(string ID, RemoteFunction.Handler handler)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -79,6 +80,8 @@ namespace SkyBridge
         private void Update()
         {
             connection.Update(Time.deltaTime);
+
+            ThreadManager.Update();
         }
     }
 }
