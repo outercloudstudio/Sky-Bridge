@@ -43,6 +43,8 @@ namespace SkyBridge
         private float timeout = SkyBridge.timeout;
         private float keepalive = SkyBridge.keepalive;
 
+        public List<Packet> sendQueue = new List<Packet>();
+
         public void Connect(string _IP, int _port)
         {
             IP = _IP;
@@ -75,7 +77,10 @@ namespace SkyBridge
             networkStreamBuffer = new byte[SkyBridge.bufferSize];
             networkStream.BeginRead(networkStreamBuffer, 0, SkyBridge.bufferSize, new AsyncCallback(ReceiveCallback), null);
 
-            SendPacket(new Packet("UDP_INFO").AddValue(UDPPort));
+            ThreadManager.ExecuteOnMainThread(() =>
+            {
+                SendPacket(new Packet("UDP_INFO").AddValue(UDPPort));
+            });
 
             connectionMode = ConnectionMode.CONNECTED;
         }
@@ -96,7 +101,10 @@ namespace SkyBridge
             networkStreamBuffer = new byte[SkyBridge.bufferSize];
             networkStream.BeginRead(networkStreamBuffer, 0, SkyBridge.bufferSize, new AsyncCallback(ReceiveCallback), null);
 
-            SendPacket(new Packet("UDP_INFO").AddValue(UDPPort));
+            ThreadManager.ExecuteOnMainThread(() =>
+            {
+                SendPacket(new Packet("UDP_INFO").AddValue(UDPPort));
+            });
 
             connectionMode = ConnectionMode.CONNECTED;
         }
@@ -110,15 +118,30 @@ namespace SkyBridge
 
         public void SendPacket(Packet packet, PacketReliability reliability = PacketReliability.RELIABLE)
         {
+            packet.reliability = reliability;
+
+            sendQueue.Add(packet);
+
+            if (sendQueue.Count == 1) SendCallback(null);
+        }
+
+        public void SendCallback(IAsyncResult result)
+        {
+            if (sendQueue.Count == 0) return;
+
+            Packet packet = sendQueue[0];
+
+            sendQueue.RemoveAt(0);
+
             byte[] packetBytes = packet.ToBytes();
 
-            if (reliability == PacketReliability.RELIABLE)
+            if (packet.reliability == PacketReliability.RELIABLE)
             {
-                Debug.Log("Sending packet " + packet.packetType + " to " + IP + ":" + port);
+                if (packet.packetType != "KEEP_ALIVE") Debug.Log("Sending packet " + packet.packetType + " to " + IP + ":" + port);
 
                 try
                 {
-                    networkStream.BeginWrite(packetBytes, 0, packetBytes.Length, null, null);
+                    networkStream.BeginWrite(packetBytes, 0, packetBytes.Length, SendCallback, null);
                 }
                 catch (Exception ex)
                 {
@@ -133,7 +156,7 @@ namespace SkyBridge
 
                 try
                 {
-                    UDPClient.BeginSend(packetBytes, packetBytes.Length, null, null);
+                    UDPClient.BeginSend(packetBytes, packetBytes.Length, SendCallback, null);
                 }
                 catch (Exception ex)
                 {
@@ -150,26 +173,36 @@ namespace SkyBridge
             {
                 int bytesRead = networkStream.EndRead(result);
 
-                Packet packet = new Packet(networkStreamBuffer, PacketReliability.RELIABLE);
-
-                if (packet.packetType == "KEEP_ALIVE")
+                for (int readPos = 0; readPos < bytesRead;)
                 {
-                    timeout = SkyBridge.timeout;
-                }
-                else if (packet.packetType == "UDP_INFO")
-                {
-                    int UDPPort = packet.GetInt(0);
+                    byte[] packetLengthBytes = networkStreamBuffer[readPos..(readPos + 4)];
+                    int packetLength = BitConverter.ToInt32(packetLengthBytes);
 
-                    BeginUDP(UDPPort);
-                }
-                else
-                {
-                    Debug.Log("Recieved packet " + packet.packetType + " from " + IP + ":" + port);
+                    byte[] packetBytes = networkStreamBuffer[readPos..(readPos + packetLength)];
 
-                    ThreadManager.ExecuteOnMainThread(() =>
+                    Packet packet = new Packet(packetBytes, PacketReliability.RELIABLE);
+
+                    if (packet.packetType == "KEEP_ALIVE")
                     {
-                        if (onPacketRecieved != null) onPacketRecieved(this, packet);
-                    });
+                        timeout = SkyBridge.timeout;
+                    }
+                    else if (packet.packetType == "UDP_INFO")
+                    {
+                        int UDPPort = packet.GetInt(0);
+
+                        BeginUDP(UDPPort);
+                    }
+                    else
+                    {
+                        Debug.Log("Recieved packet " + packet.packetType + " from " + IP + ":" + port);
+
+                        ThreadManager.ExecuteOnMainThread(() =>
+                        {
+                            if (onPacketRecieved != null) onPacketRecieved(this, packet);
+                        });
+                    }
+
+                    readPos += packetLength;
                 }
 
                 ThreadManager.ExecuteOnMainThread(() =>
@@ -215,6 +248,8 @@ namespace SkyBridge
 
         public void Update(float delta)
         {
+            if (connectionMode != ConnectionMode.CONNECTED) return;
+
             timeout -= delta;
             keepalive -= delta;
 

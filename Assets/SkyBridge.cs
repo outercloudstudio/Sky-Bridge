@@ -56,7 +56,10 @@ namespace SkyBridge {
 
         public static List<Packet> persistentPackets = new List<Packet>();
 
-        private void Start()
+        public delegate void Ready();
+        public static Ready onReady;
+
+        private IEnumerator Start()
         {
             connection.onPacketRecieved = HandlePacket;
 
@@ -65,6 +68,11 @@ namespace SkyBridge {
             AddRemoteFunction("NETWORKED_TRANSFORM_UPDATE", NetworkedTransformUpdate);
             AddRemoteFunction("NETWORKED_RIGIDBODY_UPDATE", NetworkedRigidbodyUpdate);
             AddRemoteFunction("ADD_CLIENT", AddClient);
+            AddRemoteFunction("READY", ClientReady);
+
+            yield return null;
+
+            if (isHost && onReady != null) onReady();
         }
 
         #region Native Remote Function Handlers
@@ -92,6 +100,8 @@ namespace SkyBridge {
         public void UnregisterNetworkedObject(Connection connection, string source, Packet packet)
         {
             string ID = packet.GetString(0);
+
+            if (!registeredNetworkedObjects.ContainsKey(ID)) return;
 
             NetworkedObject networkedObject = registeredNetworkedObjects[ID];
             Destroy(networkedObject.gameObject);
@@ -141,6 +151,11 @@ namespace SkyBridge {
             {
                 Send(_packet, ID);
             }
+        }
+
+        public void ClientReady(Connection connection, string source, Packet packet)
+        {
+            if(onReady != null) onReady();
         }
         #endregion
 
@@ -215,8 +230,11 @@ namespace SkyBridge {
 
                 foreach (KeyValuePair<string, NetworkedObject> key in registeredNetworkedObjects)
                 {
+                    Debug.LogWarning("sending register neworked object " + key.Key);
                     Send(new Packet("REGISTER_NETWORKED_OBJECT").AddValue(key.Key).AddValue(key.Value.owner).AddValue(key.Value.prefabKey).AddValue(key.Value.transform.position).AddValue(key.Value.transform.rotation), ID);
                 }
+
+                Send(new Packet("READY").AddValue(client.ID), ID);
 
                 foreach (Packet _packet in persistentPackets)
                 {
@@ -246,6 +264,8 @@ namespace SkyBridge {
             {
                 string ID = packet.GetString(0);
                 string source = packet.GetString(1);
+
+                Debug.Log(ID);
 
                 Packet newPacket = new Packet(ID);
                 newPacket.values = packet.values.GetRange(2, packet.values.Count - 2);

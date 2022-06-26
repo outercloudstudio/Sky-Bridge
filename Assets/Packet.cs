@@ -175,9 +175,9 @@ namespace SkyBridge
                     case Type.VECTOR2:
                         return new SerializedValue(new Vector2(BitConverter.ToSingle(bytes[8..12]), BitConverter.ToSingle(bytes[12..16])));
                     case Type.VECTOR3INT:
-                        return new SerializedValue(new Vector3(BitConverter.ToInt32(bytes[8..12]), BitConverter.ToInt32(bytes[12..16]), BitConverter.ToInt32(bytes[16..20])));
+                        return new SerializedValue(new Vector3Int(BitConverter.ToInt32(bytes[8..12]), BitConverter.ToInt32(bytes[12..16]), BitConverter.ToInt32(bytes[16..20])));
                     case Type.VECTOR2INT:
-                        return new SerializedValue(new Vector3(BitConverter.ToInt32(bytes[8..12]), BitConverter.ToInt32(bytes[12..16])));
+                        return new SerializedValue(new Vector2Int(BitConverter.ToInt32(bytes[8..12]), BitConverter.ToInt32(bytes[12..16])));
                     case Type.QUATERNION:
                         return new SerializedValue(new Quaternion(BitConverter.ToSingle(bytes[8..12]), BitConverter.ToSingle(bytes[12..16]), BitConverter.ToSingle(bytes[16..20]), BitConverter.ToSingle(bytes[20..24])));
                 }
